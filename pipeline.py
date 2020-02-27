@@ -44,7 +44,10 @@ class Pipeline():
             first_space = element_expression.find(' ')
 
             # User-friendly element name. Used to fetch from registry.
-            element_name = element_expression[:first_space]
+            if first_space == -1:
+                element_name = element_expression
+            else:
+                element_name = element_expression[:first_space]
 
             # User-friendly element parameters list. For example:
             # ['src=Input File.txt', 'enable_masking']

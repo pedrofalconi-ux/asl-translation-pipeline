@@ -1,4 +1,6 @@
 import logging
+import time
+import os
 
 import registry
 from elements import *
@@ -6,9 +8,14 @@ from elements import *
 logger = logging.getLogger(__name__)
 
 # Log to file.
-log_file_handler = logging.FileHandler('pipeline.log')
+os.makedirs('logs', exist_ok=True)
+log_file_handler = logging.FileHandler(
+    os.path.join('logs', f'pipeline {time.strftime("%Y-%m-%d %H:%M:%S")}.log')
+)
 log_file_handler.setLevel(logging.INFO)
-log_file_handler.setFormatter(logging.Formatter('[%(levelname)s] [%(asctime)s] %(message)s'))
+log_file_handler.setFormatter(
+    logging.Formatter('[%(levelname)s] [%(asctime)s] %(message)s')
+)
 logger.addHandler(log_file_handler)
 
 # Log to stdout.

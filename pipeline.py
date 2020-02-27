@@ -78,6 +78,15 @@ class Pipeline():
                 logger.error('Failed to instantiate "{}": {}'.format(element['name'], ex))
                 raise ex
 
+    def destruct_elements(self):
+        '''Calls the destructor for each element in the pipeline.'''
+        for element in self._pipeline:
+            try:
+                logger.debug('Destructing "{}"...'.format(element['name']))
+                del element['instance']
+            except Exception as ex:
+                logger.error('Failed to destruct "{}": {}'.format(element['name'], ex))
+
     def process(self):
         '''Starts the pipeline processing.'''
         for element in self._pipeline:

@@ -22,3 +22,4 @@ if __name__ == '__main__':
     pl.parse_pipeline_expression(pipeline_expression)
     pl.instantiate_elements()
     pl.process()
+    pl.destruct_elements()

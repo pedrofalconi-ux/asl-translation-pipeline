@@ -4,22 +4,15 @@ class PipelineElement():
     # The name of this pipeline element.
     name = 'base-element'
 
-    # If the process() function is a generator.
-    is_generator = True
-
     def __init__(self, *args, **kwargs):
         '''Generic pipeline element constructor.'''
         pass
 
-    def pre(self):
+    def __del__(self):
         pass
 
     def process(self, data):
-        '''The actual processing step. Might be a generator returning one
-        processed element of "data" per iteration, or a blocking function that
-        will return after all elements of "data" have been entirely processed.
+        '''The actual processing step. Receives the output from the previous
+        element in `data` and returns the processed data for the next element.
         '''
         raise NotImplementedError
-
-    def post(self):
-        pass

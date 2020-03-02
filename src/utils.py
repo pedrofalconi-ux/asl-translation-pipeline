@@ -8,4 +8,4 @@ def get_git_revision_hash(cwd=None, short=False):
     if short:
         popenargs.append('--short')
 
-    return subprocess.check_output(popenargs, cwd=cwd, text=True).strip()
+    return subprocess.check_output(popenargs, cwd=cwd).decode('utf-8').strip()

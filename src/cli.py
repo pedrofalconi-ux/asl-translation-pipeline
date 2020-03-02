@@ -6,9 +6,10 @@ import time
 import utils
 
 # Set up logging.
-os.makedirs('logs', exist_ok=True)
+log_dir = os.path.join(os.path.dirname(__name__), 'logs')
+os.makedirs(log_dir, exist_ok=True)
 log_file_handler = logging.FileHandler(
-    os.path.join('logs', f'pipeline {time.strftime("%Y-%m-%d %H:%M:%S")}.log')
+    os.path.join(log_dir, f'pipeline {time.strftime("%Y-%m-%d %H:%M:%S")}.log')
 )
 log_file_handler.setLevel(logging.INFO)
 log_file_handler.setFormatter(

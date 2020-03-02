@@ -1,0 +1,3 @@
+[submodule "submodules/vlibras-translate"]
+	path = submodules/vlibras-translate
+	url = https://gitlab.lavid.ufpb.br/vlibras2019/vlibras-library/vlibras-translate

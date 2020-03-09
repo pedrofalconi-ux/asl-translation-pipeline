@@ -4,6 +4,9 @@ class PipelineElement():
     # The name of this pipeline element.
     name = 'base-element'
 
+    # Disable caching for the output of this element.
+    dont_cache_output = False
+
     def __init__(self, *args, **kwargs):
         '''Generic pipeline element constructor.'''
         pass

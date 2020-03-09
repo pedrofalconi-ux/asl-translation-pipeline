@@ -110,6 +110,8 @@ class Pipeline():
         '''Calls the constructor with the desired parameters for each element
         in the pipeline.
         '''
+        logger.info('Instantiating pipeline elements...')
+
         for element in self._pipeline:
             try:
                 logger.debug('Instantiating "{}"...'.format(element.name))
@@ -120,6 +122,8 @@ class Pipeline():
 
     def destruct_elements(self):
         '''Calls the destructor for each element in the pipeline.'''
+        logger.info('Destructing pipeline...')
+
         for element in self._pipeline:
             try:
                 logger.debug('Destructing "{}"...'.format(element.name))
@@ -129,4 +133,5 @@ class Pipeline():
 
     def process(self):
         '''Starts the pipeline processing.'''
+        logger.info('Starting pipeline processing...')
         self._starting_element.process_and_pass_along()

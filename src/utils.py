@@ -3,6 +3,10 @@ import os
 import subprocess
 import sys
 
+def get_file_md5_hash(file, cwd=None):
+    '''Returns the MD5 hash for the specified file.'''
+    return subprocess.check_output(['rhash', '--md5', file], cwd=cwd).decode('utf-8').strip()
+
 def get_git_revision_hash(cwd=None, short=False):
     '''Returns the current git revision hash of this repository. If desired, the
     hash for other repositories can be obtained by using the `cwd` argument.'''

@@ -1,6 +1,7 @@
 import json
 import logging
 
+from artifact import rename_temporary_artifact_directory, empty_temporary_artifact_directory
 import element_stub
 from elements import *
 
@@ -111,6 +112,7 @@ class Pipeline():
         in the pipeline.
         '''
         logger.info('Instantiating pipeline elements...')
+        empty_temporary_artifact_directory()
 
         for element in self._pipeline:
             try:
@@ -135,3 +137,4 @@ class Pipeline():
         '''Starts the pipeline processing.'''
         logger.info('Starting pipeline processing...')
         self._starting_element.process_and_pass_along()
+        rename_temporary_artifact_directory()

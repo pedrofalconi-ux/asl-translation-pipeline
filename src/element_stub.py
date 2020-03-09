@@ -1,6 +1,7 @@
 import hashlib
 import logging
 
+from artifact import update_hash
 import cache
 import registry
 
@@ -65,3 +66,4 @@ class ElementStub():
                 self.output['default'].process_and_pass_along(output, prev_cache_key=cache_key)
             else:
                 logger.debug(f'[{self.name}] Pipeline section finished!')
+                update_hash(cache_key)

@@ -14,7 +14,7 @@ class CsvSrcElement(PipelineElement):
     _path = None
 
     def __init__(self, *args, **kwargs):
-        super()
+        super().__init__(args, *kwargs)
 
         try:
             self._path = kwargs['path']

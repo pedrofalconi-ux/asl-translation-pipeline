@@ -1,3 +1,4 @@
+import random
 from elements.element import PipelineElement
 from registry import register_element
 
@@ -21,6 +22,7 @@ class SplitElement(PipelineElement):
 
     def process(self, data):
         val_line_count = round(len(data) * self._val_percentage)
+        random.shuffle(data)
 
         return {
             'train': data[:-val_line_count],

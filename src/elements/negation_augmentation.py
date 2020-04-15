@@ -16,13 +16,13 @@ class NegationAugmentation(PipelineElement):
     _fd = None
     _reader = None
     _path = None
-    _sample = 0
+    _max_new_sentences = 0
     _count = 0
 
     def __init__(self, *args, **kwargs):
         super().__init__(args, *kwargs)
         try:
-            self._sample = int(kwargs['sample'])
+            self._max_new_sentences = int(kwargs['max_new_sentences'])
             self._path = kwargs['path']
             self._fd = open(self._path, 'r')
             self._reader = csv.reader(self._fd)
@@ -47,14 +47,18 @@ class NegationAugmentation(PipelineElement):
         fetching_expression += ")"  #ends the expression
         re_fetch = r"" + fetching_expression
 
-        data_augmentation = list()
+        data_augmentation = set()
 
         #goes over every line and makes that augmentation for that line, concatenating the results in "data_augmentation"
         for i in data:
-            batch_generated = self.generate(re_fetch, i)
-            data_augmentation = data_augmentation + batch_generated
+            batch_generated = self.generate(re_fetch, i)    #generate the new sentences
+
+            #add every new sentence to the data_augmentation set in order to avoid repeated sentences
+            for augmented_sentence in batch_generated:
+                data_augmentation.add(augmented_sentence)
 
         #shuffles the augmented sentences and then concatenates that first sentences (number given by value "sample") with the original data
+        data_augmentation = list(data_augmentation) #turns the set into a list to be used for the shuffel and concatenation
         random.shuffle(data_augmentation)
         data = data + data_augmentation
         return data #returns the original data along with its augmented version

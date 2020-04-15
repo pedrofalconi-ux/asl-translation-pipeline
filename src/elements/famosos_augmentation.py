@@ -16,13 +16,13 @@ class FamososAugmentation(PipelineElement):
     _fd = None
     _reader = None
     _path = None
-    _sample = 0
+    _max_new_sentences = 0
     _count = 0
 
     def __init__(self, *args, **kwargs):
         super().__init__(args, *kwargs)
         try:
-            self._sample = int(kwargs['sample'])
+            self._max_new_sentences = int(kwargs['sample'])
             self._path = kwargs['path']
             self._fd = open(self._path, 'r')
             self._reader = csv.reader(self._fd)
@@ -75,16 +75,20 @@ class FamososAugmentation(PipelineElement):
         combined_gi = combined_gi[:-1]  #removes that last "or (|)" of the expression for "gi"
         re_gi = r"" + combined_gi
 
-        data_augmentation = list()
+        data_augmentation = set()
 
         #goes over every line and makes that augmentation for that line, concatenating the results in "data_augmentation"
         for i in data:
             batch_generated = self.generate(i, re_gr, re_gi, famosos_gr, famosos_gi, match_famoso_gr, match_famoso_gi)
-            data_augmentation = data_augmentation + batch_generated
+            
+            #add every new sentence to the data_augmentation set in order to avoid repeated sentences
+            for augmented_sentence in batch_generated:
+                data_augmentation.add(augmented_sentence)
 
         #shuffles the augmented sentences and then concatenates that first sentences (number given by value "sample") with the original data
+        data_augmentation = list(data_augmentation) #turns the set into a list to be used for the shuffle and concatenation
         random.shuffle(data_augmentation)
-        data = data + data_augmentation[:self._sample]
+        data = data + data_augmentation[:self._max_new_sentences]
         return data #returns the original data along with its augmented version
 
     def generate(self, line, re_gr, re_gi, famososExamples_gr, famososExamples_gi, dict_gr, dict_gi):

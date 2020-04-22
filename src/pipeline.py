@@ -137,4 +137,4 @@ class Pipeline():
         '''Starts the pipeline processing.'''
         logger.info('Starting pipeline processing...')
         self._starting_element.process_and_pass_along()
-        rename_temporary_artifact_directory()
+        return rename_temporary_artifact_directory()

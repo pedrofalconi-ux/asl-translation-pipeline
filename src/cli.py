@@ -3,6 +3,7 @@ import os
 import sys
 import time
 
+import execution_log
 import utils
 
 # Set up logging.
@@ -34,7 +35,9 @@ if __name__ == '__main__':
         quit()
     '''
 
-    logger.info(f'Git Revision Hash: {utils.get_git_revision_hash()}')
+    pipeline_git_hash = utils.get_git_revision_hash()
+    logger.info(f'Git Revision Hash: {pipeline_git_hash}')
+    execution_comment = input('Please describe this execution: ')
 
     pipeline_expression = ' '.join(sys.argv[1:])
     if not pipeline_expression:
@@ -47,5 +50,13 @@ if __name__ == '__main__':
     pl = pipeline.Pipeline()
     pl.parse_pipeline_json(pipeline_expression)
     pl.instantiate_elements()
-    pl.process()
+    artifact_hash = pl.process()
     pl.destruct_elements()
+
+    logger.info(f'Pipeline finished. Artifacts saved to: {artifact_hash}')
+    execution_log.append_to_log([
+        time.strftime("%Y-%m-%d %H:%M:%S"), # Timestamp
+        execution_comment,                  # Description
+        pipeline_expression,                # Pipeline expression
+        pipeline_git_hash,                  # Git hash for this repository
+    ])

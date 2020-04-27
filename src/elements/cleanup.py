@@ -93,9 +93,14 @@ class CleanupElement(PipelineElement):
                 self._simplify_intensifiers,
             ]:
                 gr, gi = (method(gr), method(gi))
-            gr, gi = self._remove_futuro_passado(gr, gi)
 
-            output.append((gr, gi))
+                # One or both sentences empty, pair should be removed from set.
+                if not gr or not gi:
+                    break
+
+            if gr and gi:
+                gr, gi = self._remove_futuro_passado(gr, gi)
+                output.append((gr, gi))
 
         return output
 

@@ -7,6 +7,9 @@ class PipelineElement():
     # Disable caching for the output of this element.
     dont_cache_output = False
 
+    # Element version. Useful for invalidating cache.
+    version = 1
+
     def __init__(self, *args, **kwargs):
         '''Generic pipeline element constructor.'''
         pass

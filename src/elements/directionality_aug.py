@@ -201,10 +201,10 @@ class Directionality_Augmentation(PipelineElement):
         
         Returns:
             [list] -- [New phrases generated]
-        """        
+        """     
         new_patterns_gr = []
-        new_patterns_gi =[]
-        new_phrases = []
+        new_patterns_gi =[] 
+        new_phrases = set()
         phrase_gr = gr_gi_tuple[0]
 
         # gets both [pronome reto -> verbo -> pronome reto]  
@@ -239,7 +239,7 @@ class Directionality_Augmentation(PipelineElement):
                 # Generates new phrases [befores_string + pattern + after_string] 
                 # if the following pattern is encountered 
                 # [pronome reto -> verbo -> pronome reto]
-                new_phrases.append(self.assembly_phrase(gr_gi_tuple,
+                new_phrases.add(self.assembly_phrase(gr_gi_tuple,
                                                         search_pattern = search_pattern_agent_verb,
                                                         combination_gr = combination_gr,
                                                         combination_gi = combination_gi))
@@ -249,20 +249,20 @@ class Directionality_Augmentation(PipelineElement):
                 #print(e)
                 pass
             finally:
-                # Shuffle to return {max_new_sentences ( default_val = 50 )} random phrases
-                random.shuffle(new_phrases)
-                new_phrases = new_phrases[:max_new_sentences]
-                new_phrases.insert(0,gr_gi_tuple)
                 return new_phrases
         else:
-            new_phrases.insert(0,gr_gi_tuple)
             return new_phrases  
     
     def process(self,data, max_new_sentences = 50):
         # Used to do the augmentation in phrases
+        max_new_sentences = None if max_new_sentences == 0 else max_new_sentences  
         new_phrases = []
         for phrase in data:
-            new_phrases.extend(self.augmentation(phrase, max_new_sentences = max_new_sentences))
+            new_phrases_aug = list(self.augmentation(phrase, max_new_sentences = max_new_sentences))
+            new_phrases_aug.insert(0,phrase)
+            
+            new_phrases.extend(new_phrases_aug[:max_new_sentences])
+            
         return new_phrases    
     
 register_element(Directionality_Augmentation)

@@ -14,6 +14,7 @@ class ElementStub():
     params = None
     instance = None
     output = None
+    has_processed = False
 
     def __init__(self, name, params, output):
         self.name = name
@@ -26,6 +27,7 @@ class ElementStub():
         returned and forwards it to the next element(s) to do the same.
         '''
         logger.debug(f'Passing data to element {self.name}...')
+        self.has_processed = True
 
         # Calculate current cache key, which is based on this element's plus the
         # previous' element's cache key, since this output also depends on the

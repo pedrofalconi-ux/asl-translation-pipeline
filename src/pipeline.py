@@ -137,4 +137,10 @@ class Pipeline():
         '''Starts the pipeline processing.'''
         logger.info('Starting pipeline processing...')
         self._starting_element.process_and_pass_along()
+
+        # Take care of any leftover elements.
+        for element in self._pipeline:
+            if not element.has_processed:
+                element.process_and_pass_along()
+
         return rename_temporary_artifact_directory()

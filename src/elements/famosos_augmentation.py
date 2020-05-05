@@ -22,7 +22,7 @@ class FamososAugmentation(PipelineElement):
     def __init__(self, *args, **kwargs):
         super().__init__(args, *kwargs)
         try:
-            self._max_new_sentences = int(kwargs['sample'])
+            self._max_new_sentences = int(kwargs['max_new_sentences'])
             self._path = kwargs['path']
             self._fd = open(self._path, 'r')
             self._reader = csv.reader(self._fd)

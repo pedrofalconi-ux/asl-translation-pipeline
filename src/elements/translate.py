@@ -1,5 +1,5 @@
 from globalstore import add_to_store, fetch_from_store
-from utils import add_submodule_to_sys_path
+from utils import add_submodule_to_sys_path, get_git_revision_hash, get_submodule_path
 from elements.element import PipelineElement
 from registry import register_element
 
@@ -22,6 +22,12 @@ class TranslationElement(PipelineElement):
         self._tr = translation.Translation()
 
         add_to_store('vlibras-translation-instance', self._tr)
+
+    def get_cache_key(self):
+        # Given the same input data, the output should only change if when the
+        # version of the `vlibras-translate` submodule changes. We account for
+        # this by using the git HEAD commit hash as the cache key.
+        return get_git_revision_hash(cwd=get_submodule_path('vlibras-translate'))
 
     def process(self, data):
         output = []

@@ -1,13 +1,17 @@
-import os
-import logging
 import glob
+import logging
+import os
+
+from artifact import get_artifact_directory
 from elements.element import PipelineElement
 from registry import register_element
-from artifact import get_artifact_directory
+
+logger = logging.getLogger(__name__)
 
 class BinarizeElement(PipelineElement):
-    """ Binarize Step """
-    name = "binarize"
+    '''fairseq-binarize step.'''
+    name = 'binarize'
+
     _folder = None
     _dest_dir = None
     _prep_path = None
@@ -15,28 +19,31 @@ class BinarizeElement(PipelineElement):
     _valid_pref = None
 
     def __init__(self, *args, **kwargs):
-        super().__init__(args, *kwargs)
+        super().__init__(__file__, *args, **kwargs)
+
         # get artifact directory
         self._folder = get_artifact_directory()
+
         # create bin folder
         self._dest_dir = os.path.join(self._folder, 'BIN')
         os.mkdir(self._dest_dir)
-        
-        self._prep_path = os.path.join(self._folder, "Preprocessed")
-        self._train_pref = os.path.join(self._prep_path, "train")
-        self._valid_pref = os.path.join(self._prep_path, "valid")
 
-    def process(self, data=None):     
-        logger = logging.getLogger(__name__)
+        self._prep_path = os.path.join(self._folder, 'Preprocessed')
+        self._train_pref = os.path.join(self._prep_path, 'train')
+        self._valid_pref = os.path.join(self._prep_path, 'valid')
+
+
+    def process(self, data=None):
         _, _, bin_files = next(os.walk(self._dest_dir))
 
         if bin_files:
-            logger.warn('There are already files in BIN folder. Skipping step...')
+            logger.warning('There are already files in the BIN folder. Skipping step...')
             return
-            
-        logger.debug("Running fairseq-preprocess")
+
         fairseq_preprocess_cmd = f'fairseq-preprocess -s gr -t gi --trainpref {self._train_pref} --validpref {self._valid_pref} --destdir {self._dest_dir}'
+        logger.debug(f'Running: {fairseq_preprocess_cmd}')
         os.system(fairseq_preprocess_cmd)
-    
+
+
 # Add element to the registry.
 register_element(BinarizeElement)

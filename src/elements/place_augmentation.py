@@ -16,18 +16,19 @@ class PlaceAugmentation(PipelineElement):
     _fd = None
     _reader = None
     _path = None
-    _sample = 0
+    _max_new_sentences = 0
 
     def __init__(self, *args, **kwargs):
         super().__init__(args, *kwargs)
         try:
-            self._sample = int(kwargs['sample'])
+            max_new_sentences = int(kwargs['max_new_sentences'])
+            self._max_new_sentences = None if max_new_sentences == -1 else max_new_sentences 
             self._path = kwargs['path']
             self._fd = open(self._path, 'r')
             self._reader = csv.reader(self._fd)
         except KeyError:
             raise ValueError(
-                '`place_augmentation` requires `path` and `sample` parameter.')
+                '`place_augmentation` requires `path` and `max_new_sentences` parameter.')
 
     def process(self, data):
         list_places_gi = list()
@@ -40,12 +41,14 @@ class PlaceAugmentation(PipelineElement):
 
         # data augmentation generated
         data_augmentation = self.generate(data, list_places_gr, list_places_gi)
+        # set to list * you can't concat set + list
+        data_augmentation = list(data_augmentation)
         random.shuffle(data_augmentation)
-        data = data + data_augmentation[:self._sample]
+        data = data + data_augmentation[:self._max_new_sentences]
         return data
 
     def generate(self, corpus_sample, list_places_gr, list_places_gi):
-        data = list()
+        data = set()
         for row_gr, row_gi in corpus_sample:
             # looking for places on the row
             # e.g Viajei para Recife ontem., VIAJAR RECIFE&CIDADE ONTEM [PONTO]
@@ -65,8 +68,9 @@ class PlaceAugmentation(PipelineElement):
                     list_gi = [re.sub(literal_gi, place, row_gi)
                                for place in list_places_gi if literal_gi != place]
                     for element_gr, element_gi in zip(list_gr, list_gi):
-                        data.append((element_gr, element_gi))
-        return data
+                        data.add((element_gr, element_gi))
+        # return a new set with elements in the set that are not in the others
+        return data.difference(corpus_sample)
 
     def row_search(self, row_gr, row_gi, list_gr, list_gi):
         _list = list()

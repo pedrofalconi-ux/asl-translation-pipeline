@@ -16,7 +16,7 @@ class TestPlaceAugmentation(unittest.TestCase):
     def test_constructor(self):
         try:
             # check if everything is ok  in PlaceAugmentation
-            _ = PlaceAugmentation(path='./augmentation/lugares.csv', sample=1)
+            _ = PlaceAugmentation(path='./data/lugares.csv', max_new_sentences=1)
         except Exception as e:
             self.fail(e)
 
@@ -24,14 +24,14 @@ class TestPlaceAugmentation(unittest.TestCase):
         # check if lenght passed by args is the same of output generated
         length = 10
         augmentation = PlaceAugmentation(
-            path='./augmentation/lugares.csv', sample=length)
+            path='./data/lugares.csv', max_new_sentences=length)
         generated = augmentation.process(corpus)
         self.assertEqual(length, abs(len(generated) - len(corpus)))
 
     def test_data_augmentation(self):
         # check expected corpus
         augmentation = PlaceAugmentation(
-            path='./augmentation/lugares.csv', sample=100000) # define a MAX sample (in order to get all possible augmentation)
+            path='./data/lugares.csv', max_new_sentences=-1) # define a MAX sample (in order to get all possible augmentation)
         generated = augmentation.process(corpus)
         # remove original corpus from generated  (in the pipeline this is not necessary) and selected first 5 phrases
         # we need sort the data generated in order to check if the match is correct

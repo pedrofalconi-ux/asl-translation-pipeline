@@ -62,6 +62,10 @@ class LearnBpeElement(PipelineElement):
         preprocessed_train_gr_file = os.path.join(self._preprocessed_path, 'train.' + self._src)
         preprocessed_train_gi_file = os.path.join(self._preprocessed_path, 'train.' + self._tgt)
 
+        if os.path.isfile(self._train_concat_corpus):
+            logger.warning(f'File {self._train_concat_corpus} already exists. Skipping...')
+            return
+
         # concatenation of preprocessed gr and gi to a single train file
         os.system(f'cat {preprocessed_train_gr_file} {preprocessed_train_gi_file} > {self._train_concat_corpus}')
 

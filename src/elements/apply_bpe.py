@@ -79,6 +79,10 @@ class ApplyBpeElement(PipelineElement):
             for lang in [self._src, self._tgt]:
                 file_to_apply_bpe_on = os.path.join(self._preprocessed_path, set_corp + '.' + lang)
                 output_file = os.path.join(self._bpe_path, set_corp + '.' + lang)
+                
+                if os.path.isfile(output_file):
+                    logger.warning(f'File {output_file} already exists. Skipping...')
+                    continue
 
                 # Run apply bpe on set_corp files
                 logger.debug(f'Running apply_bpe.py on {file_to_apply_bpe_on}')

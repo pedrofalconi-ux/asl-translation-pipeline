@@ -3,7 +3,4 @@ artifacts
 cache
 logs
 .vscode
-data-pipeline
-example-pipelines
-data
-augmentation
+data/corpus

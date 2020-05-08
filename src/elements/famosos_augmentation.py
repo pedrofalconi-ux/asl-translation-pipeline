@@ -13,13 +13,13 @@ class FamososAugmentation(PipelineElement):
 
     _fd = None
     _path = None
-    _max_new_sentences = 0
     _count = 0
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         try:
-            self._max_new_sentences = int(kwargs['max_new_sentences'])
+            max_new_sentences = int(kwargs['max_new_sentences']) if 'max_new_sentences' in kwargs else 0
+            self._max_new_sentences = max_new_sentences if max_new_sentences else None
             self._path = kwargs['path']
             self._fd = open(self._path, 'r')
         except KeyError:

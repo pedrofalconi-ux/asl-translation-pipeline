@@ -38,7 +38,6 @@ class IntensidadeAugmentation(PipelineElement):
     for key, values in _intensifiers.items():
         for value in values:
             _structured_intensifiers[value] = key
-    _sample = 0
     _augment_data = set()
     _intensifiers_sub = "!!!"  # marcador de intensificador na frase
 
@@ -46,13 +45,13 @@ class IntensidadeAugmentation(PipelineElement):
         super().__init__(*args, **kwargs)
         try:
             # this is slice index thus the None as default value
-            self._sample = int(
-                kwargs["sample"]) if "sample" in kwargs else None
+            max_new_sentences = int(kwargs['max_new_sentences']) if 'max_new_sentences' in kwargs else 0
+            self._max_new_sentences = max_new_sentences if max_new_sentences else None
             with open(intensifiers_list_path, encoding="utf8") as f:
                 self._list_intesifiers = {item.strip() for item in f}
         except KeyError:
             raise ValueError(
-                "`intensidade_augmentation` requires `path` and `sample` parameter."
+                "`intensidade_augmentation` requires `path` parameter."
             )
 
     def _remove_intensifiers(self, data):
@@ -150,7 +149,7 @@ class IntensidadeAugmentation(PipelineElement):
             augmented_lines.extend(self._augment_data)
             self._augment_data.clear()
         random.shuffle(augmented_lines)
-        augmented_lines = augmented_lines[:self._sample]
+        augmented_lines = augmented_lines[:self._max_new_sentences]
 
         data.extend(augmented_lines)
 

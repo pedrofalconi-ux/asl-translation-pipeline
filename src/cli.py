@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 # Configure log output.
 logging.basicConfig(
     format='[%(levelname)s] [%(asctime)s] %(message)s',
-    level=logging.DEBUG,
+    level=logging.INFO,
     handlers=[logging.StreamHandler(sys.stdout), log_file_handler]
 )
 

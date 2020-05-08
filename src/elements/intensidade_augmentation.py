@@ -45,13 +45,11 @@ class IntensidadeAugmentation(PipelineElement):
     def __init__(self, intensifiers_list_path, *args, **kwargs):
         super().__init__(*args, **kwargs)
         try:
-            print("\n ENTREI NO CONSTRUTOR \n")
             # this is slice index thus the None as default value
             self._sample = int(
                 kwargs["sample"]) if "sample" in kwargs else None
             with open(intensifiers_list_path, encoding="utf8") as f:
                 self._list_intesifiers = {item.strip() for item in f}
-            print("\n SAI NO CONSTRUTOR \n")
         except KeyError:
             raise ValueError(
                 "`intensidade_augmentation` requires `path` and `sample` parameter."

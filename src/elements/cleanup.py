@@ -14,7 +14,7 @@ class CleanupElement(PipelineElement):
     name = 'cleanup'
 
     def __init__(self, *args, **kwargs):
-        super().__init__(args, *kwargs)
+        super().__init__(*args, **kwargs)
 
     def _fix_commas(self, sentence):
         sentence = re.sub(r' {2,}', ' ', sentence)

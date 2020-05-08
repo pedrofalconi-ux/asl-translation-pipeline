@@ -16,7 +16,7 @@ class ParallelFileDestElement(PipelineElement):
     _complete_gi_path = None
 
     def __init__(self, *args, **kwargs):
-        super().__init__(args, *kwargs)
+        super().__init__(*args, **kwargs)
 
         try:
             self._gr_path = kwargs['gr_path']

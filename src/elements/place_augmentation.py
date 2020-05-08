@@ -19,7 +19,7 @@ class PlaceAugmentation(PipelineElement):
     _max_new_sentences = 0
 
     def __init__(self, *args, **kwargs):
-        super().__init__(args, *kwargs)
+        super().__init__(*args, **kwargs)
         try:
             max_new_sentences = int(kwargs['max_new_sentences'])
             self._max_new_sentences = None if max_new_sentences == -1 else max_new_sentences 

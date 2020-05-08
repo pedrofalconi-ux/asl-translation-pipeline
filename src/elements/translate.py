@@ -8,7 +8,7 @@ class TranslationElement(PipelineElement):
     name = 'translate'
 
     def __init__(self, *args, **kwargs):
-        super().__init__(args, *kwargs)
+        super().__init__(*args, **kwargs)
 
         self._tr = fetch_from_store('vlibras-translation-instance')
         if self._tr:

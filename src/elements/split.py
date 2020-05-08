@@ -13,7 +13,7 @@ class SplitElement(PipelineElement):
     _val_percentage = None
 
     def __init__(self, *args, **kwargs):
-        super().__init__(args, *kwargs)
+        super().__init__(*args, **kwargs)
 
         try:
             self._val_percentage = float(kwargs['val_percentage'])

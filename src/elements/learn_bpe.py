@@ -17,7 +17,7 @@ class LearnBpeElement(PipelineElement):
            -tgt {string}: Target file extension ('gr' or 'gi').
            -bpe_tokens {int}: Number of merges(BPE).
         '''
-        super().__init__(args, *kwargs)
+        super().__init__(*args, **kwargs)
 
         # set src to src argument if it's given, else set to default(gr)
         if 'src' in kwargs:

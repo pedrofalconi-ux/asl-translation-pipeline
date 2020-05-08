@@ -8,7 +8,7 @@ class MaskingElement(PipelineElement):
     name = 'mask'
 
     def __init__(self, *args, **kwargs):
-        super().__init__(args, *kwargs)
+        super().__init__(*args, **kwargs)
 
         # Check for TQDM.
         self._tqdm = fetch_from_store('tqdm-import')

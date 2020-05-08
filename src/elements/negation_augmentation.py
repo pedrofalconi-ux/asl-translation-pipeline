@@ -20,7 +20,7 @@ class NegationAugmentation(PipelineElement):
     _count = 0
 
     def __init__(self, *args, **kwargs):
-        super().__init__(args, *kwargs)
+        super().__init__(*args, **kwargs)
         try:
             self._max_new_sentences = int(kwargs['max_new_sentences'])
             self._path = kwargs['path']

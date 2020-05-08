@@ -54,8 +54,8 @@ class Directionality_Augmentation(PipelineElement):
     _pattern_pronoun_verb = "%s %s %s" %(_agent_pattern, _pronoun_pattern, _verb_pattern)
     
     def __init__(self, *args, **kwargs):
-        super.__init__(*args, **kwargs)
-     
+        super().__init__(*args, **kwargs)
+
     #! Métodos necessários para o step de augmentation
     def find_pattern(self,phrase_gr_gi):
         """[Find pattern in phrase, return 2 lists with each pattern]

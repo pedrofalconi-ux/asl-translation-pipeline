@@ -29,8 +29,14 @@ class CsvSrcElement(PipelineElement):
         # same.
         return get_file_md5_hash(self._path)
 
-    def process(self, data=None):
-        return self._reader
+    def process(self, data=[]):
+        if data is None:
+            data = []
+
+        for row in self._reader:
+            if row:
+                data.append(row[:2])
+        return data
 
     def __del__(self):
         if self._fd:

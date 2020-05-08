@@ -139,8 +139,16 @@ class Pipeline():
         self._starting_element.process_and_pass_along()
 
         # Take care of any leftover elements.
-        for element in self._pipeline:
-            if not element.has_processed:
-                element.process_and_pass_along()
+        no_more_pending_elements = False
+        while True:
+            if no_more_pending_elements:
+                break
+            no_more_pending_elements = True
+
+            for element in reversed(self._pipeline):
+                if not element.has_processed:
+                    element.process_and_pass_along()
+                    no_more_pending_elements = False
+                    break
 
         return rename_temporary_artifact_directory()

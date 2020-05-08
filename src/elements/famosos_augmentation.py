@@ -12,7 +12,6 @@ class FamososAugmentation(PipelineElement):
     name = 'famosos_augmentation'
 
     _fd = None
-    _reader = None
     _path = None
     _max_new_sentences = 0
     _count = 0
@@ -23,7 +22,6 @@ class FamososAugmentation(PipelineElement):
             self._max_new_sentences = int(kwargs['max_new_sentences'])
             self._path = kwargs['path']
             self._fd = open(self._path, 'r')
-            self._reader = csv.reader(self._fd)
         except KeyError:
             raise ValueError(
                 '`famosos_augmentation` requires `path` and `sample` parameter.')
@@ -32,7 +30,7 @@ class FamososAugmentation(PipelineElement):
         famosos_gr = list()
         famosos_gi = list()
 
-        for item in self._reader:
+        for item in data:
             famosos_gr.append(item[0])  # the names for the 'gr' are put in a list that will be looped over to make the augmentation
             famosos_gi.append(item[1])  # the names for the 'gi' are put in a list that will be looped over to make the augmentation
 

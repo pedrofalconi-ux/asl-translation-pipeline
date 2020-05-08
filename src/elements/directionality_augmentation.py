@@ -18,7 +18,7 @@ class Directionality_Augmentation(PipelineElement):
     """
 
     # The name of this pipeline element.
-    name = "directionality"
+    name = "directionality_augmentation"
 
     _agents_dict = {
         "1S": ["EU"],

@@ -34,10 +34,12 @@ class TranslationElement(PipelineElement):
 
         for line in data:
             # FIXME: Should we really strip() here?
-            pt = line[0].strip()
-            gi = line[1].strip()
+            if line:
+                pt = line[0]
+                gi = line[1]
+                gr = self._tr.rule_translation(pt)
 
-            output.append((self._tr.rule_translation(pt), gi))
+                output.append((gr, gi))
 
         return output
 

@@ -26,7 +26,7 @@ class BinarizeElement(PipelineElement):
 
         # create bin folder
         self._dest_dir = os.path.join(self._folder, 'BIN')
-        os.mkdir(self._dest_dir)
+        os.makedirs(self._dest_dir, exist_ok=True)
 
         self._prep_path = os.path.join(self._folder, 'Preprocessed')
         self._train_pref = os.path.join(self._prep_path, 'train')

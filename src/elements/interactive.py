@@ -39,7 +39,7 @@ class InteractiveScoreElement(PipelineElement):
 
     def _read_json_db(self, folder):
         if not folder:
-            json_path = os.path.join(os.getcwd(), 'test_parameters_default.json')
+            json_path = os.path.join(os.getcwd(), 'pipelines', 'test_parameters_default.json')
         else:
             json_path = os.path.join(folder, 'test_parameters.json')
 

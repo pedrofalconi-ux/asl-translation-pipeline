@@ -32,7 +32,10 @@ class LearnBpeElement(PipelineElement):
             self._tgt = 'gi'
 
         # set bpe tokens
-        self._bpe_tokens = kwargs['bpe_tokens']
+        if 'bpe_tokens' in kwargs:
+            self._bpe_tokens = kwargs['bpe_tokens']
+        else:
+            self._bpe_tokens = 10000
 
         # set BPE folder
         self._bpe_path = os.path.join(get_artifact_directory(), 'BPE')
@@ -50,6 +53,10 @@ class LearnBpeElement(PipelineElement):
 
     def process(self, data=None):
         logger = logging.getLogger(__name__)
+        
+        logger.info(f'bpe_tokens {self._bpe_tokens}')
+        logger.info(f'source language {self._src}')
+        logger.info(f'target language {self._tgt}')
 
         # set path to files
         preprocessed_train_gr_file = os.path.join(self._preprocessed_path, 'train.' + self._src)

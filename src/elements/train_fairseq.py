@@ -34,7 +34,7 @@ class TrainElement(PipelineElement):
 
         # Checking if it should use the default folder
         if not folder:
-            json_path = os.path.join(os.getcwd(), f'{process}_parameters_default.json')
+            json_path = os.path.join(os.getcwd(), 'pipelines', f'{process}_parameters_default.json')
         else:
             json_path = os.path.join(folder, f'{process}_parameters.json')
 

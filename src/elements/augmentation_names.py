@@ -99,7 +99,7 @@ class FamososAugmentation(PipelineElement):
                 for new_sentence in self._generate_sentences(gr, gi, idx_name):
                     new_sentences.add(new_sentence)
 
-        return new_sentences
+        return list(new_sentences)
 
 
 # Add element to the registry.

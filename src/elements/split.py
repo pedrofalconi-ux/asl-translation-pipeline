@@ -10,7 +10,7 @@ class SplitElement(PipelineElement):
     `valid`.
     '''
     name = 'split'
-    _val_percentage = None
+    dont_use_cache = True
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -19,6 +19,7 @@ class SplitElement(PipelineElement):
             self._val_percentage = float(kwargs['val_percentage'])
         except KeyError:
             raise ValueError('`split` requires a `val_percentage` parameter.')
+
 
     def process(self, data):
         val_line_count = round(len(data) * self._val_percentage)

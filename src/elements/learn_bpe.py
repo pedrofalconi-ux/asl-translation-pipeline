@@ -10,6 +10,7 @@ class LearnBpeElement(PipelineElement):
         Concatena gr e gi preprocessados e executa o learn bpe do subword-nmt na saída.
     '''
     name = 'learn_bpe'
+    dont_use_cache = True
 
     def __init__(self, *args, **kwargs):
         '''Kwargs:
@@ -53,7 +54,7 @@ class LearnBpeElement(PipelineElement):
 
     def process(self, data=None):
         logger = logging.getLogger(__name__)
-        
+
         logger.info(f'bpe_tokens {self._bpe_tokens}')
         logger.info(f'source language {self._src}')
         logger.info(f'target language {self._tgt}')

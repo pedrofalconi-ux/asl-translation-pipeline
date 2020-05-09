@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 class BinarizeElement(PipelineElement):
     '''fairseq-binarize step.'''
     name = 'binarize'
+    dont_use_cache = True
 
     _folder = None
     _dest_dir = None

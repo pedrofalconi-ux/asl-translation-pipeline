@@ -11,9 +11,8 @@ logger = logging.getLogger(__name__)
 
 class InteractiveScoreElement(PipelineElement):
     '''Final score element.'''
-
-    # The name of this pipeline element.
     name = 'interactive_score'
+    dont_use_cache = True
 
     def __init__(self, *args, **kwargs):
         super().__init__(__file__, *args, **kwargs)

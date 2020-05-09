@@ -14,6 +14,7 @@ class TrainElement(PipelineElement):
         Cria a pasta de checkpoint e executa o fairseq train com os parâmetros de treino.
     '''
     name = 'train'
+    dont_use_cache = True
 
     def __init__(self, *args, **kwargs):
         super().__init__(__file__, *args, **kwargs)

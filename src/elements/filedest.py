@@ -7,6 +7,7 @@ from registry import register_element
 class FileDestElement(PipelineElement):
     '''Writes out to a file.'''
     name = 'filedest'
+    dont_use_cache = True
 
     _fd = None
     _binary = False

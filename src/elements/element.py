@@ -5,7 +5,7 @@ class PipelineElement():
     name = 'base-element'
 
     # Disable caching for the output of this element.
-    dont_cache_output = False
+    dont_use_cache = False
 
     # Element version. Useful for invalidating cache.
     version = 1

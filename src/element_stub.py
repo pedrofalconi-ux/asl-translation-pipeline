@@ -43,7 +43,7 @@ class ElementStub():
 
         # Try to read data from cache. If that fails, run the data through the
         # element to process and save the output to the cache.
-        output = cache.read_from_cache(cache_key)
+        output = cache.read_from_cache(cache_key) if not self.instance.dont_use_cache else None
 
         if output:
             logger.info(f'[{self.name}] Found and read cache.')
@@ -51,7 +51,7 @@ class ElementStub():
             logger.info(f'[{self.name}] Processing data...')
             output = self.instance.process(data)
 
-            if not self.instance.dont_cache_output:
+            if not self.instance.dont_use_cache:
                 cache.write_to_cache(cache_key, output)
 
         # Pass the output of the element down the pipeline.

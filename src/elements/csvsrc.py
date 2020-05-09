@@ -7,7 +7,7 @@ from utils import get_file_md5_hash
 class CsvSrcElement(PipelineElement):
     '''Reads from a `.csv` file.'''
     name = 'csvsrc'
-    dont_cache_output = True
+    dont_use_cache = True
 
     _fd = None
     _reader = None

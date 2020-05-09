@@ -46,7 +46,7 @@ class ElementStub():
         output = cache.read_from_cache(cache_key) if not self.instance.dont_use_cache else None
 
         if output:
-            logger.info(f'[{self.name}] Found and read cache.')
+            logger.info(f'[{self.name}] Found and read cache key `{cache_key}`.')
         else:
             logger.info(f'[{self.name}] Processing data...')
             output = self.instance.process(data)

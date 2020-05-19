@@ -57,6 +57,7 @@ if __name__ == '__main__':
     execution_log.append_to_log([
         time.strftime("%Y-%m-%d %H:%M:%S"), # Timestamp
         execution_comment,                  # Description
+        artifact_hash,                      # Output artifact directory
         pipeline_expression,                # Pipeline expression
         pipeline_git_hash,                  # Git hash for this repository
     ])

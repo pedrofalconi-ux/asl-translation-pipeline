@@ -23,32 +23,12 @@ class ResultsElement(PipelineElement):
         except KeyError:
             raise ValueError('`results` requires a `corpus_file` parameter.')
 
+        from strsimpy.levenshtein import Levenshtein
+        self._levenshtein = Levenshtein()
+
 
     def _calculate_scores(self, gi_model, gi_gold):
-        set_gold = set()
-        set_model = set()
-
-        correct = 0
-        total = 0
-
-        words_model = gi_model.split()
-        for i, word_gold in enumerate(gi_gold.split()):
-            total += 1
-            set_gold.add(word_gold)
-
-            try:
-                word_model = words_model[i]
-            except IndexError:
-                continue
-
-            set_model.add(word_model)
-            if word_model == word_gold:
-                correct += 1
-
-        position_dependent_score = correct / total
-        position_independent_score = 1 - (len(set_gold - set_model) / len(set_gold))
-
-        return position_dependent_score, position_independent_score
+        return (100 - self._levenshtein.distance(gi_model, gi_gold)) / 100
 
 
     def process(self, data=None):
@@ -59,7 +39,7 @@ class ResultsElement(PipelineElement):
             test_corpus_reader = csv.reader(test_corpus_file)
             csv_writer = csv.writer(results_csv_file)
             csv_writer.writerow(
-                ['PT', 'GR', 'GI (Padrão Ouro)', 'GI (Gerado pela rede)', 'Score (por pos.)', 'Score (por dic.)', 'Resultado']
+                ['PT', 'GR', 'GI (Padrão Ouro)', 'GI (Gerado pela rede)', 'Score', 'Resultado']
             )
 
             result_count = {
@@ -75,10 +55,10 @@ class ResultsElement(PipelineElement):
                 gr = gr_file.readline().strip()
                 gi_model = gi_model_file.readline().strip()
 
-                score_pos_dependent, score_pos_independent = self._calculate_scores(gi_model, gi_gold)
-                if score_pos_dependent == 1:
+                score = self._calculate_scores(gi_model, gi_gold)
+                if score == 1:
                     result = 'OK'
-                elif score_pos_independent > 0.5:
+                elif score > 0.85:
                     result = 'Parcial'
                 else:
                     result = 'Incorreto'
@@ -87,8 +67,7 @@ class ResultsElement(PipelineElement):
 
                 csv_writer.writerow([
                     pt, gr, gi_gold, gi_model,
-                    f'{round(score_pos_dependent * 100, 2)}%',
-                    f'{round(score_pos_independent * 100, 2)}%',
+                    f'{round(score * 100, 2)}%',
                     result
                 ])
 

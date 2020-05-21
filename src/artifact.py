@@ -15,7 +15,7 @@ def update_hash(appended_hash):
 
 def get_artifact_directory_by_hash(artifact_hash):
     '''Returns the path of the artifact directory from a previous execution.'''
-    return os.path.join(os.path.dirname(__name__), 'artifacts', artifact_hash)
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'artifacts', artifact_hash)
 
 def get_artifact_directory():
     '''Returns the path of the current (temporary) artifact directory.'''
@@ -31,7 +31,7 @@ def rename_temporary_artifact_directory():
     `current_hash`, used to rename the directory.
     '''
     original_dirname = get_artifact_directory()
-    new_dirname = os.path.join(os.path.dirname(__name__), 'artifacts', current_hash)
+    new_dirname = get_artifact_directory_by_hash(current_hash)
 
     try:
         os.rename(original_dirname, new_dirname)

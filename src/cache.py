@@ -4,7 +4,7 @@ import pickle
 
 logger = logging.getLogger(__name__)
 
-BASE_CACHE_DIR = os.path.join(os.path.dirname(__name__), 'cache')
+BASE_CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'cache')
 os.makedirs(BASE_CACHE_DIR, exist_ok=True)
 
 def read_from_cache(key):

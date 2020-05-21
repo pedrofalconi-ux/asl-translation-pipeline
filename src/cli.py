@@ -7,7 +7,7 @@ import execution_log
 import utils
 
 # Set up logging.
-log_dir = os.path.join(os.path.dirname(__name__), 'logs')
+log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'logs')
 os.makedirs(log_dir, exist_ok=True)
 log_file_handler = logging.FileHandler(
     os.path.join(log_dir, f'pipeline {time.strftime("%Y-%m-%d %H:%M:%S")}.log')

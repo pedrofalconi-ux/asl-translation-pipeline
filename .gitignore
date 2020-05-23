@@ -4,3 +4,4 @@ cache
 logs
 .vscode
 data/corpus
+tmp

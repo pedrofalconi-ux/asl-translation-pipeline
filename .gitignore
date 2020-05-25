@@ -1,7 +1,9 @@
 __pycache__
+.vscode
 artifacts
 cache
-logs
-.vscode
 data/corpus
+logs
 tmp
+execution_log.csv
+

@@ -18,6 +18,7 @@ class ResultsElement(PipelineElement):
             self._corpus_path = os.path.join(get_artifact_directory(), kwargs['corpus_file'])
 
             self._gr_path = os.path.join(get_artifact_directory(), 'Preprocessed/test.gr')
+            self._gi_path = os.path.join(get_artifact_directory(), 'Preprocessed/test.gi')
             self._gi_model_path = os.path.join(get_artifact_directory(), 'test.h')
 
             self._results_csv_path = os.path.join(get_artifact_directory(), 'Test Results.csv')
@@ -39,6 +40,7 @@ class ResultsElement(PipelineElement):
     def process(self, data=None):
         with open(self._corpus_path, 'r') as test_corpus_file, \
             open(self._gr_path, 'r') as gr_file, \
+            open(self._gi_path, 'r') as gi_file, \
             open(self._gi_model_path, 'r') as gi_model_file, \
             open(self._results_csv_path, 'w') as results_csv_file:
             test_corpus_reader = csv.reader(test_corpus_file)
@@ -56,8 +58,8 @@ class ResultsElement(PipelineElement):
 
             for row in test_corpus_reader:
                 pt = row[0]
-                gi_gold = row[1]
                 gr = gr_file.readline().strip()
+                gi_gold = self._postprocessor.postprocess(gi_file.readline().strip())
                 gi_model = self._postprocessor.postprocess(gi_model_file.readline().strip())
 
                 score = self._calculate_scores(gi_model, gi_gold)

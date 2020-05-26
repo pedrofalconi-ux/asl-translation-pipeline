@@ -71,7 +71,7 @@ if __name__ == '__main__':
         '-c', '--corpus', help='Path to the corpus CSV file.', default=os.path.join(here, '..', 'data', 'corpus', 'corpus.csv')
     )
     parser.add_argument(
-        '-t', '--train-hash', help='Path to the train hash, if running a test pipeline.', default=''
+        '-t', '--train-hash', help='Train artifact hash, if running a test pipeline.', default=''
     )
     parser.add_argument(
         '-m', '--message', help='Execution message.', default=None

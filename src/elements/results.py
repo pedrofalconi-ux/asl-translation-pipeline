@@ -4,6 +4,7 @@ import os
 from artifact import get_artifact_directory
 from elements.element import PipelineElement
 from registry import register_element
+from utils import add_submodule_to_sys_path
 
 class ResultsElement(PipelineElement):
     '''Output CSV file with test results.'''
@@ -25,6 +26,10 @@ class ResultsElement(PipelineElement):
 
         from strsimpy.levenshtein import Levenshtein
         self._levenshtein = Levenshtein()
+
+        add_submodule_to_sys_path('vlibras-translate')
+        from vlibras_translate import postprocessing
+        self._postprocessor = postprocessing.Postprocessor()
 
 
     def _calculate_scores(self, gi_model, gi_gold):
@@ -53,7 +58,7 @@ class ResultsElement(PipelineElement):
                 pt = row[0]
                 gi_gold = row[1]
                 gr = gr_file.readline().strip()
-                gi_model = gi_model_file.readline().strip()
+                gi_model = self._postprocessor.postprocess(gi_model_file.readline().strip())
 
                 score = self._calculate_scores(gi_model, gi_gold)
                 if score == 1:

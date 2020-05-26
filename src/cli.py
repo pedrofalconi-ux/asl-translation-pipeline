@@ -46,11 +46,11 @@ def execute(pipeline_expression, execution_comment):
 
     logger.info(f'Pipeline finished. Artifacts saved to: {artifact_hash}')
     execution_log.append_to_log([
-        execution_timestamp,                # Timestamp
-        execution_comment,                  # Description
-        artifact_hash,                      # Output artifact directory
-        pipeline_expression,                # Pipeline expression
-        pipeline_git_hash,                  # Git hash for this repository
+        execution_timestamp,                   # Timestamp
+        execution_comment,                     # Description
+        artifact_hash,                         # Output artifact directory
+        pipeline_expression.replace('\n', ''), # Pipeline expression
+        pipeline_git_hash,                     # Git hash for this repository
     ])
 
     # Copy logs over to artifact directory as well.

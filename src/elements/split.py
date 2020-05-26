@@ -20,10 +20,14 @@ class SplitElement(PipelineElement):
         except KeyError:
             raise ValueError('`split` requires a `val_percentage` parameter.')
 
+        self._shuffle = 'shuffle' in kwargs
+
 
     def process(self, data):
         val_line_count = round(len(data) * self._val_percentage)
-        random.shuffle(data)
+
+        if self._shuffle:
+            random.shuffle(data)
 
         return {
             'train': data[:-val_line_count],

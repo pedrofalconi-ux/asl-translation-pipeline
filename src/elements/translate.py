@@ -10,18 +10,20 @@ class TranslationElement(PipelineElement):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        # Import TQDM.
+        from tqdm import tqdm
+        self._tqdm = tqdm
+
+        # Check for vlibras-translate.
         self._tr = fetch_from_store('vlibras-translation-instance')
-        if self._tr:
-            # Module is already loaded, we're done.
-            return
+        if not self._tr:
+            # Module wasn't loaded. Import it and save to the global store.
+            add_submodule_to_sys_path('vlibras-translate')
 
-        # Module wasn't loaded. Import it and save to the global store.
-        add_submodule_to_sys_path('vlibras-translate')
+            from vlibras_translate import translation
+            self._tr = translation.Translation()
 
-        from vlibras_translate import translation
-        self._tr = translation.Translation()
-
-        add_to_store('vlibras-translation-instance', self._tr)
+            add_to_store('vlibras-translation-instance', self._tr)
 
     def get_cache_key(self):
         # Given the same input data, the output should only change if when the
@@ -32,8 +34,7 @@ class TranslationElement(PipelineElement):
     def process(self, data):
         output = []
 
-        for line in data:
-            # FIXME: Should we really strip() here?
+        for line in self._tqdm(data, desc='translating'):
             if line:
                 pt = line[0]
                 gi = line[1]

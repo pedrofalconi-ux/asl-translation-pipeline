@@ -3,6 +3,8 @@ import os
 import subprocess
 import sys
 
+modules_in_path = set()
+
 def get_file_md5_hash(file, cwd=None):
     '''Returns the MD5 hash for the specified file.'''
     return subprocess.check_output(['rhash', '--md5', file], cwd=cwd).decode('utf-8').strip()
@@ -24,4 +26,8 @@ def get_submodule_path(submodule_name):
 
 def add_submodule_to_sys_path(submodule_name):
     '''Adds the given `submodule_name` to the sys's import PATH.'''
+    if submodule_name in modules_in_path:
+        return
+
     sys.path.insert(0, get_submodule_path(submodule_name))
+    modules_in_path.add(submodule_name)

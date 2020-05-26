@@ -10,13 +10,9 @@ class MaskingElement(PipelineElement):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Check for TQDM.
-        self._tqdm = fetch_from_store('tqdm-import')
-        if not self._tqdm:
-            # Module wasn't loaded. Import it and save to the global store.
-            from tqdm import tqdm
-            self._tqdm = tqdm
-            add_to_store('tqdm-import', tqdm)
+        # Import TQDM.
+        from tqdm import tqdm
+        self._tqdm = tqdm
 
         # Check for vlibras-translate.
         self._tr = fetch_from_store('vlibras-translation-instance')

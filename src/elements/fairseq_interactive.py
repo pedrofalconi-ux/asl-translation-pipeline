@@ -33,7 +33,7 @@ class InteractiveScoreElement(PipelineElement):
         self._cfg_path = kwargs['parameters']
 
 
-    def _read_parameters_json(self, json_path, process):
+    def _read_parameters_json(self, json_path):
         '''Reads the train configuration file.'''
         with open(json_path, 'r') as json_file:
             parameters_dict = json.load(json_file)
@@ -49,7 +49,7 @@ class InteractiveScoreElement(PipelineElement):
         file_basename_wout_ext = os.path.basename(os.path.splitext(data_src)[0])
         file_out_name = os.path.join(get_artifact_directory(), file_basename_wout_ext + '.out')
 
-        parameters_dict = self._read_json_db(self._cfg_path)
+        parameters_dict = self._read_parameters_json(self._cfg_path)
         str_parameters = ''
         for key, value in parameters_dict[0].items():
             str_parameters += f' {key} {value}'

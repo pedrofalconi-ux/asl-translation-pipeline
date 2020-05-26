@@ -26,9 +26,9 @@ class TrainElement(PipelineElement):
             raise ValueError(f'`{self.name}` requires a `parameters` parameter.')
 
 
-    def _read_parameters_json(self, json_path, process):
+    def _read_parameters_json(self, json_file_path):
         '''Reads the train configuration file.'''
-        with open(json_path, 'r') as json_file:
+        with open(json_file_path, 'r') as json_file:
             parameters_dict = json.load(json_file)
             logger.info(f'Using train parameters: {parameters_dict}')
 

@@ -20,59 +20,41 @@ class TrainElement(PipelineElement):
         super().__init__(__file__, *args, **kwargs)
 
         self._artifact_folder_path = get_artifact_directory()
-
-        # train_parameters_path is optional. It should be the path to an
-        # alternative 'train_parameters.json'.
-        if 'train_parameters_path' in kwargs:
-            self._train_parameters_path = kwargs['train_parameters_path']
-        else:
-            self._train_parameters_path = None
+        try:
+            self._train_parameters_path = kwargs['parameters']
+        except KeyError:
+            raise ValueError(f'`{self.name}` requires a `parameters` parameter.')
 
 
-    def _read_json_db(self, json_path, process):
-        '''Reads the train configuration file.
-           Returns the path to it and the content(parameters).
-        '''
-
-        # Checking if it should use the default folder
-        if not json_path:
-            json_path = os.path.join(os.getcwd(), 'data', 'fairseq-params', f'{process}_parameters_default.json')
-
-        # Reading preprocess json
+    def _read_parameters_json(self, json_path, process):
+        '''Reads the train configuration file.'''
         with open(json_path, 'r') as json_file:
             parameters_dict = json.load(json_file)
             logger.info(f'Using train parameters: {parameters_dict}')
 
-        return parameters_dict, json_path
+        return parameters_dict
 
 
     def process(self, data=None):
+        # Set up paths and folders.
+        bin_folder = os.path.join(self._artifact_folder_path, 'BIN')
+        checkpoint_folder = os.path.join(self._artifact_folder_path, 'Checkpoints')
+        parameters_dict = self._read_parameters_json(self._train_parameters_path)
+        os.makedirs(checkpoint_folder, exist_ok=True)
 
-        # set BIN folder path
-        train_BIN_path = os.path.join(self._artifact_folder_path, 'BIN')
+        # Copy train parameters JSON to the artifact folder.
+        copy2(self._train_parameters_path, self._artifact_folder_path)
 
-        # set checkpoints folder path
-        checkpoints_results_folder = os.path.join(self._artifact_folder_path, 'Checkpoints')
-        os.makedirs(checkpoints_results_folder, exist_ok=True)
-
-        # get train parameters and configuration json path, then copy into train folder
-        parameters_dict, json_path = self._read_json_db(self._train_parameters_path, 'train')
-        copy2(json_path, self._artifact_folder_path)
-
-        # copy the dictionaries from BIN to the Checkpoints folder
+        # Copy the dictionaries from BIN to the Checkpoints folder.
         for lang in ['gr', 'gi']:
-            copy2(os.path.join(train_BIN_path, f'dict.{lang}.txt') , os.path.join(checkpoints_results_folder, f'dict.{lang}.txt'))
+            copy2(os.path.join(bin_folder, f'dict.{lang}.txt') , os.path.join(checkpoint_folder, f'dict.{lang}.txt'))
 
-        # set the parameters string for fairseq
-        str_parameters = f'fairseq-train "{train_BIN_path}" --save-dir "{checkpoints_results_folder}" --tensorboard-logdir "{checkpoints_results_folder}"'
-
-        # Adding train parameters
-        for key, value in parameters_dict[0].items() :
-            # Do not remove these spaces
+        str_parameters = f'fairseq-train "{bin_folder}" --save-dir "{checkpoint_folder}" --tensorboard-logdir "{checkpoint_folder}"'
+        for key, value in parameters_dict[0].items():
             str_parameters += f' {key} {value}'
 
         # Run Fairseq training
-        logger.debug(f'Running {str_parameters}')
+        logger.debug(f'Running: {str_parameters}')
         os.system(str_parameters)
 
 

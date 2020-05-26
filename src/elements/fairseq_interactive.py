@@ -30,27 +30,11 @@ class InteractiveScoreElement(PipelineElement):
         self._checkpoint_path = os.path.join(self._train_link_folder, 'checkpoint_best.pt')
 
         # get test parameters json
-        if 'test_cfg_path' in kwargs:
-            self._cfg_path = kwargs['test_cfg_path']
-        else:
-            self._cfg_path = None
+        self._cfg_path = kwargs['parameters']
 
 
-    def _read_json_db(self, folder):
-        if not folder:
-            json_path = os.path.join(os.getcwd(), 'pipelines', 'test_parameters_default.json')
-        else:
-            json_path = os.path.join(folder, 'test_parameters.json')
-
-            # Checking if it should use other parameters or default
-            if not os.path.isfile(json_path):
-                logger.debug(f'{json_path} not found!')
-                json_path = os.path.join(os.getcwd(), 'test_parameters_default.json')
-                logger.debug(f'Using {json_path}')
-
-        copy2(json_path, get_artifact_directory())
-
-        # Reading preprocess json
+    def _read_parameters_json(self, json_path, process):
+        '''Reads the train configuration file.'''
         with open(json_path, 'r') as json_file:
             parameters_dict = json.load(json_file)
             logger.info(f'Using test parameters: {parameters_dict}')
@@ -62,14 +46,16 @@ class InteractiveScoreElement(PipelineElement):
         data_src = os.path.join(get_artifact_directory(), 'BPE', 'test.gr')
         data_path = self._checkpoint_path
 
-        parameters_dict = self._read_json_db(self._cfg_path)
-        beam = parameters_dict[0]['--beam']
-
         file_basename_wout_ext = os.path.basename(os.path.splitext(data_src)[0])
         file_out_name = os.path.join(get_artifact_directory(), file_basename_wout_ext + '.out')
 
+        parameters_dict = self._read_json_db(self._cfg_path)
+        str_parameters = ''
+        for key, value in parameters_dict[0].items():
+            str_parameters += f' {key} {value}'
+
         # traduzir com o interactive
-        os.system(f'fairseq-interactive {self._train_bin} --path {data_path} --beam {beam} --remove-bpe < {data_src} | tee {file_out_name}')
+        os.system(f'fairseq-interactive {self._train_bin} --path {data_path} {str_parameters} --remove-bpe < {data_src} | tee {file_out_name}')
 
         return file_basename_wout_ext
 
@@ -88,5 +74,6 @@ class InteractiveScoreElement(PipelineElement):
 
     def process(self, data=None):
         self._fairseq_score(self._fairseq_interactive())
+
 
 register_element(InteractiveScoreElement)

@@ -21,6 +21,7 @@ This repository contains the implementation of a generic data processing pipelin
 ### Prerequisites
 - Python 3.6
 - `rhash` installed and available in your `PATH` environment variable.
+- Possibly other `pip` packages depending on which elements are used.
 
 ### Cloning and Installation
 This git repository uses submodules. As such, either manually initialize them yourself after cloning or pass `--recurse-submodules` to the `git clone` call.
@@ -28,23 +29,34 @@ This git repository uses submodules. As such, either manually initialize them yo
 Installation can be done by running `pip install . -e` from this directory to install as an editable pip package.
 
 ### Usage
-**TODO:** Update this section after interface changes.
+#### Programatically
+Import the `execute` function from `cli.py` and use it as follows:
+```python
+artifact_hash = execute('<PIPELINE JSON>', '<USER COMMENT>')
+```
 
-Call `src/cli.py` and pass a JSON pipeline string. For example, assuming you have an `example-pipeline.json` file containing:
-```json
-["csvsrc path=./test/corpus.csv", "translate", "split val_percentage=.3",
-	{
-		"train": ["filedest path=./test/train.gr"],
-		"valid": ["filedest path=./test/valid.gr"]
-	}
-]
+#### Via CLI
+The `cli.py` file can also act as an entry point. Usage is as follows:
 ```
-```bash
-python3 src/cli.py $(cat example-pipeline.json)
+usage: cli.py [-h] [-p PIPELINE] [-c CORPUS] [-t TRAIN_HASH] [-m MESSAGE]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -p PIPELINE, --pipeline PIPELINE
+                        Path to the pipeline JSON file.
+  -c CORPUS, --corpus CORPUS
+                        Path to the corpus CSV file.
+  -t TRAIN_HASH, --train-hash TRAIN_HASH
+                        Train artifact hash, if running a test pipeline.
+  -m MESSAGE, --message MESSAGE
+                        Execution message.
 ```
+Note that `-p` and `-c` are not optional, and while `-m` is optional when invoking the pipeline from the CLI, if it is omitted, the script will prompt you to type an execution message manually before starting the pipeline.
 
 ### Artifacts
-**TODO:** Explain how to find output files.
+While the pipeline is executing, relevant files will be written to `artifacts/tmp`. Once the pipeline finishes, a hash is calculated taking into consideration all the data that passed through the pipeline, and the `tmp` folder will be renamed according to that hash.
+
+Said artifact hash will be printed to the screen after the pipeline finishes, logged to the relevant log file in `logs` and saved to the `execution_log.csv` file.
 
 ## Pipeline Elements
 ### The Basics

@@ -12,12 +12,7 @@ class BinarizeElement(PipelineElement):
     '''fairseq-binarize step.'''
     name = 'binarize'
     dont_use_cache = True
-
-    _folder = None
-    _dest_dir = None
-    _prep_path = None
-    _train_pref = None
-    _valid_pref = None
+    version = 2
 
     def __init__(self, *args, **kwargs):
         super().__init__(__file__, *args, **kwargs)
@@ -29,9 +24,9 @@ class BinarizeElement(PipelineElement):
         self._dest_dir = os.path.join(self._folder, 'BIN')
         os.makedirs(self._dest_dir, exist_ok=True)
 
-        self._prep_path = os.path.join(self._folder, 'Preprocessed')
-        self._train_pref = os.path.join(self._prep_path, 'train')
-        self._valid_pref = os.path.join(self._prep_path, 'valid')
+        self._source_path = os.path.join(self._folder, 'BPE')
+        self._train_pref = os.path.join(self._source_path, 'train')
+        self._valid_pref = os.path.join(self._source_path, 'valid')
 
 
     def process(self, data=None):

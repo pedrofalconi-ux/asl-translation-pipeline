@@ -57,6 +57,9 @@ class ResultsElement(PipelineElement):
             total_results = 0
 
             for row in test_corpus_reader:
+                if len(row) < 1:
+                    continue
+
                 pt = row[0]
                 gr = gr_file.readline().strip()
                 gi_gold = self._postprocessor.postprocess(gi_file.readline().strip())

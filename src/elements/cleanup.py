@@ -35,7 +35,10 @@ class CleanupElement(PipelineElement):
 
         sentence = re.sub(r' _(?=[123][sp])', '_', sentence)
 
-        sentence = re.sub(r'(\([+-]+\)) ', r'\1', sentence)
+        # TODO: this fixes cases like '(+) GRANDE' -> '(+)GRANDE'. However,
+        # currently input data contains sentences with intensifiers both on the
+        # right and on the left, so we're skipping this fixup for now.
+        # sentence = re.sub(r'(\([+-]+\)) ', r'\1', sentence)
 
         return sentence
 

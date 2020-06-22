@@ -56,12 +56,19 @@ class ResultsElement(PipelineElement):
             }
             total_results = 0
 
-            for row in test_corpus_reader:
-                if len(row) < 1:
-                    continue
+            # for row in test_corpus_reader:
+            while True:
+                try:
+                    row = next(test_corpus_reader)
+                except StopIteration:
+                    row = None
 
-                pt = row[0]
+                pt = row[0] if row and len(row) > 0 else '-'
                 gr = gr_file.readline().strip()
+
+                if pt == '-' and not gr:
+                    break
+
                 gi_gold = self._postprocessor.postprocess(gi_file.readline().strip())
                 gi_model = self._postprocessor.postprocess(gi_model_file.readline().strip())
 

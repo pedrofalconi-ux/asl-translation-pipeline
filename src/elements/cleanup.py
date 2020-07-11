@@ -12,6 +12,7 @@ class CleanupElement(PipelineElement):
     '''Takes a list of (GR, GI) tuples and fixes common errors in the sentences.
     '''
     name = 'cleanup'
+    version = 2
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -27,6 +28,9 @@ class CleanupElement(PipelineElement):
 
     def _fix_incorrect_directionals(self, sentence):
         return re.sub(r'([SP])([123])', r'\2\1', sentence)
+
+    def _fix_linebreaks(self, sentence):
+        return sentence.replace('\r', '').replace('\n', ' ')
 
     def _fix_misplaced_spaces(self, sentence):
         sentence = re.sub(r' _CIDADE', '_CIDADE', sentence)
@@ -91,6 +95,7 @@ class CleanupElement(PipelineElement):
             for method in [
                 self._fix_commas,
                 self._fix_incorrect_directionals,
+                self._fix_linebreaks,
                 self._fix_misplaced_spaces,
                 self._fix_punctuation,
                 self._simplify_intensifiers,

@@ -38,7 +38,7 @@ class ResultsElement(PipelineElement):
 
 
     def process(self, data=None):
-        with open(self._corpus_path, 'r') as test_corpus_file, \
+        with open(self._corpus_path, 'r', newline='') as test_corpus_file, \
             open(self._gr_path, 'r') as gr_file, \
             open(self._gi_path, 'r') as gi_file, \
             open(self._gi_model_path, 'r') as gi_model_file, \

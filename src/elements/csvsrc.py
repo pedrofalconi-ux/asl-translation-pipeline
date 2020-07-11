@@ -18,8 +18,8 @@ class CsvSrcElement(PipelineElement):
 
         try:
             self._path = kwargs['path']
-            self._fd = open(self._path, 'r')
-            self._reader = csv.reader(self._fd)
+            self._fd = open(self._path, 'r', newline='')
+            self._reader = csv.reader(self._fd) 
         except KeyError:
             raise ValueError('`csvsrc` requires a `path` parameter.')
 

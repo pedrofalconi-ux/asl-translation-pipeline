@@ -1,7 +1,11 @@
+import logging
+
 from globalstore import add_to_store, fetch_from_store
 from utils import add_submodule_to_sys_path, get_git_revision_hash, get_submodule_path
 from elements.element import PipelineElement
 from registry import register_element
+
+logger = logging.getLogger(__name__)
 
 class TranslationElement(PipelineElement):
     '''Translates a (PT, GI) tuple to a (GR, GI) tuple.'''
@@ -34,13 +38,21 @@ class TranslationElement(PipelineElement):
     def process(self, data):
         output = []
 
-        for line in self._tqdm(data, desc='translating'):
-            if line:
-                pt = line[0]
-                gi = line[1]
-                gr = self._tr.rule_translation(pt)
+        for i, line in enumerate(self._tqdm(data, desc='translating')):
+            if not line or len(line) < 2:
+                logger.warn(f'Missing GR/GI in line {i + 1}, skipping...\nProblematic line: {line}')
+                continue
 
-                output.append((gr, gi))
+
+            pt = line[0]
+            gi = line[1]
+            gr = self._tr.rule_translation(pt)
+
+            if not gr or not gi:
+                logger.warning(f'Missing GR/GI in line {i + 1} after translating, skipping...')
+                continue
+
+            output.append((gr, gi))
 
         return output
 

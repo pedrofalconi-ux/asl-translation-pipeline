@@ -10,9 +10,13 @@ class PipelineElement():
     # Element version. Useful for invalidating cache.
     version = 1
 
+    # Force element to pull from a specified cache key. Tucked away without
+    # proper documentation since I don't want this being commonly used.
+    _force_cache_key = None
+
     def __init__(self, *args, **kwargs):
         '''Generic pipeline element constructor.'''
-        pass
+        self._force_cache_key = kwargs.get('_force_cache_key')
 
     def __del__(self):
         pass

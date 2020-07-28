@@ -8,6 +8,11 @@ class SplitElement(PipelineElement):
     How much of the input dataset is set aside for usage as validation is
     determined by the `val_percentage` parameter. Outputs data to `train` and
     `valid`.
+
+    Parameters:
+    val_percentage - Percentage to use as validation set (e.g.: ".3").
+    shuffle - Whether to shuffle the data before splitting.
+    duplicate - Whether training and validation data should be the same.
     '''
     name = 'split'
     dont_use_cache = True
@@ -21,6 +26,7 @@ class SplitElement(PipelineElement):
             raise ValueError('`split` requires a `val_percentage` parameter.')
 
         self._shuffle = 'shuffle' in kwargs
+        self._duplicate = 'duplicate' in kwargs
 
 
     def process(self, data):
@@ -29,10 +35,16 @@ class SplitElement(PipelineElement):
         if self._shuffle:
             random.shuffle(data)
 
-        return {
-            'train': data[:-val_line_count],
-            'valid': data[-val_line_count:]
-        }
+        if self._duplicate:
+            return {
+                'train': data,
+                'valid': data
+            }
+        else:
+            return {
+                'train': data[:-val_line_count],
+                'valid': data[-val_line_count:]
+            }
 
 # Add element to the registry.
 register_element(SplitElement)

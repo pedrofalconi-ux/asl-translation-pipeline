@@ -7,13 +7,7 @@ from registry import register_element
 class ParallelFileDestElement(PipelineElement):
     '''Writes out GR and GI files.'''
     name = 'parallel_filedest'
-
-    _gr_fd = None
-    _gi_fd = None
-    _gr_path = None
-    _gi_path = None
-    _complete_gr_path = None
-    _complete_gi_path = None
+    dont_use_cache = True
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -26,17 +20,14 @@ class ParallelFileDestElement(PipelineElement):
             os.makedirs(os.path.dirname(self._complete_gr_path), exist_ok=True)
             self._complete_gi_path = os.path.join(get_artifact_directory(), self._gi_path)
             os.makedirs(os.path.dirname(self._complete_gi_path), exist_ok=True)
-
         except KeyError:
             raise ValueError('`csvdest` requires a `gr_path` and `gi_path` parameter.')
 
-
     def process(self, data):
         with open(self._complete_gr_path, 'w') as self._gr_fd, open(self._complete_gi_path, 'w') as self._gi_fd:
-            for line in data:
-                self._gr_fd.write(f'{line[0]}\n')
-                self._gi_fd.write(f'{line[1]}\n')
-
+            for row in data:
+                self._gr_fd.write(f'{row[0]}\n')
+                self._gi_fd.write(f'{row[1]}\n')
 
 # Add element to the registry.
 register_element(ParallelFileDestElement)

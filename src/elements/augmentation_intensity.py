@@ -149,6 +149,12 @@ class IntensidadeAugmentation(PipelineElement):
             augmented_lines.extend(self._augment_data)
             self._augment_data.clear()
         random.shuffle(augmented_lines)
+        
+        # Remove orginal data for avoid duplicates data in corpus
+        try:
+            augmented_lines.remove(data[0])
+        except Exception as e:
+            pass
         augmented_lines = augmented_lines[:self._max_new_sentences]
 
         data.extend(augmented_lines)

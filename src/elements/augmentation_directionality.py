@@ -13,7 +13,7 @@ from itertools import product, combinations
 
 
 class Directionality_Augmentation(PipelineElement):
-    """[Directionality augmentation of a phrase for the following pattern 
+    """[Directionality augmentation of a phrase for the following pattern
     [agent -> verb -> receiver] and [agent -> pronoun -> verb]]
     """
 
@@ -38,8 +38,8 @@ class Directionality_Augmentation(PipelineElement):
     _valid_chars = "A-ZÁÉÍÓÚÀÂÊÔÃÕÜÇa-záéíóúàâêôãõüç_"
     _high_valid_chars = "[" + _valid_chars + "]+"
     # GI pattern filter
-    _gi_verb_pattern = "[1-3][SP]_(" + _high_valid_chars + ")_[1-3][SP]"
-    _gi_pattern = "[1-3][SP]_" + _high_valid_chars + "_[1-3][SP]"
+    _gi_verb_pattern = "(" + _high_valid_chars + ")_[1-3][SP]_[1-3][SP]"
+    _gi_pattern = _high_valid_chars + "_[1-3][SP]_[1-3][SP]"
 
     # pronome reto
     _agent_pattern = r"\b(EU|TU|ELE|ELA|NÓS|VÓS|ELES|ELAS)\b"
@@ -72,12 +72,12 @@ class Directionality_Augmentation(PipelineElement):
     #! Métodos necessários para o step de augmentation
     def find_pattern(self, phrase_gr_gi):
         """[Find pattern in phrase, return 2 lists with each pattern]
-        
+
         Arguments:
             phrase_gr {string} -- [gr type phrase]
-        
+
         Returns:
-            [type] -- [2 lists with patterns found or 2 empty lists if 
+            [type] -- [2 lists with patterns found or 2 empty lists if
                        no pattern is encountered]
         """
         gr = phrase_gr_gi[0]
@@ -98,7 +98,7 @@ class Directionality_Augmentation(PipelineElement):
             return search_pattern_agent_verb, search_pattern_gi
 
     def new_patterns(self, pattern_gr, verb_gi, **kwargs):
-        """creates new phrases from the following patterns 
+        """creates new phrases from the following patterns
        [pronome reto, verbo, pronome reto] ou [pronome reto, pronome obliquo atono, verbo]"""
         patterns_gr = []
         patterns_gi = []
@@ -124,7 +124,7 @@ class Directionality_Augmentation(PipelineElement):
                     for directional_2 in self._agents_dict[combination[1]]:
 
                         gr = f"{directional_1} {verb} {directional_2}"
-                        gi = f"{combination[0]}_{verb_gi}_{combination[1]}"
+                        gi = f"{verb_gi}_{combination[0]}_{combination[1]}"
                         patterns_gr.append(gr)
                         patterns_gi.append(gi)
 
@@ -144,14 +144,14 @@ class Directionality_Augmentation(PipelineElement):
                     for directional_2 in self._pronouns_dict[combination[1]]:
 
                         gr = f"{directional_1} {directional_2} {verb}"
-                        gi = f"{combination[0]}_{verb_gi}_{combination[1]}"
+                        gi = f"{verb_gi}_{combination[0]}_{combination[1]}"
                         patterns_gr.append(gr)
                         patterns_gi.append(gi)
 
         return patterns_gr, patterns_gi
 
     def for_string(*args, **kwargs):
-        """Transforms a pattern ([pronome reto -> verbo -> pronome reto] 
+        """Transforms a pattern ([pronome reto -> verbo -> pronome reto]
             or [pronome reto -> pronome obliquo -> verbo])
             in a string to search for what comes before and after """
 
@@ -176,8 +176,8 @@ class Directionality_Augmentation(PipelineElement):
         return list_of_str
 
     def assembly_phrase(self, phrase, *args, **kwargs):
-        """Creates new phrases with => before_part + pattern + after_part 
-        for each combination in new_patterns method [pronome reto -> verbo -> pronome reto] 
+        """Creates new phrases with => before_part + pattern + after_part
+        for each combination in new_patterns method [pronome reto -> verbo -> pronome reto]
         or [pronome reto -> pronome obliquo -> verb]"""
 
         new_phrase_gr = phrase[0]
@@ -207,10 +207,10 @@ class Directionality_Augmentation(PipelineElement):
 
     def augmentation(self, gr_gi_tuple):
         """[Does the augmentation for both gr, gi]
-        
+
         Arguments:
             gr_gi_tuple {(string, string)} -- [tuple containing (gr_phrase, gi_phrase)]
-        
+
         Returns:
             [list] -- [New phrases generated]
         """
@@ -270,16 +270,14 @@ class Directionality_Augmentation(PipelineElement):
 
     def process(self, data):
         # Used to do the augmentation in phrases
-        new_phrases = []
+        new_phrases = list()
+
         for phrase in data:
-            new_phrases_aug = list(
-                self.augmentation(phrase)
-            )
-            new_phrases_aug.insert(0, phrase)
+            new_phrases.extend(list(self.augmentation(phrase)))
 
-            new_phrases.extend(new_phrases_aug[:self._max_new_sentences])
-
-        return new_phrases
-
+        random.shuffle(new_phrases)
+        new_phrases = new_phrases[:self._max_new_sentences]
+        data = data + new_phrases
+        return data
 
 register_element(Directionality_Augmentation)

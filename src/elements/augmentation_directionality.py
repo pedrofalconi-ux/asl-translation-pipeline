@@ -90,6 +90,17 @@ class Directionality_Augmentation(PipelineElement):
                 self._pattern_agent_verb + "|" + self._pattern_pronoun_verb, gr
             )
             search_pattern_gi = re.findall(self._gi_pattern, gi)
+            # Gets all patterns in GI
+            gi_verbs = re.findall(self._gi_verb_pattern, gi)
+
+            # Return only pattern agent verb who if contains gi verbs
+            result_pattern_agent_verb = []
+            for gi_verb in gi_verbs:
+                for pattern in search_pattern_agent_verb:
+                    if gi_verb in pattern:
+                        result_pattern_agent_verb.append(pattern)
+
+            search_pattern_agent_verb = result_pattern_agent_verb
 
         except Exception as e:
             print("find_pattern:", e)
@@ -222,7 +233,6 @@ class Directionality_Augmentation(PipelineElement):
         # gets both [pronome reto -> verbo -> pronome reto]
         # and [pronome reto -> pronome obliquo -> verbo]
         search_pattern_agent_verb, search_pattern_gi = self.find_pattern(gr_gi_tuple)
-
         # * [pronome reto -> verbo -> pronome reto]
         # [pronome reto -> pronome obliquo -> verbo]
         if search_pattern_agent_verb and search_pattern_gi:
@@ -231,8 +241,8 @@ class Directionality_Augmentation(PipelineElement):
             gi_verbs = re.findall(self._gi_verb_pattern, gr_gi_tuple[1])
             # Creates new phrases for each pattern
             # [pronome reto -> pronome obliquo -> verbo]
-            for i, patterns_in_phrase in enumerate(search_pattern_agent_verb):
-                gr, gi = self.new_patterns(patterns_in_phrase, gi_verbs[i])
+            for i, patterns_gi in enumerate(search_pattern_gi):
+                gr, gi = self.new_patterns(search_pattern_agent_verb[i], gi_verbs[i])
                 new_patterns_gr.append(gr)
                 new_patterns_gi.append(gi)
 

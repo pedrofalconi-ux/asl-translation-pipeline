@@ -10,11 +10,22 @@ class TestDirectionalityAugmentation(unittest.TestCase):
         except Exception as e:
             self.fail(e)
 
-    def test_data_data_augmentation(self):
+    def test_without_augmentation(self):
         '''Checks if augmentation works normally'''
 
-        corpus = [('ELA ME DAR VÁRIOS LIVRO [PONTO]','DAR_3S_2S VÁRIOS LIVRO [PONTO]')]
+        corpus = [('ELE PEDIR ELA SE ELA CONHECER ELE [PONTO]', 'PERGUNTAR_3S_3S CONHECER [PONTO]'),
+                  ('ESTAR MUITO CANSAR [PONTO]','EU CANSADO(+) [PONTO]')]
         length = 2
+        augmentation = Directionality_Augmentation(max_new_sentences = length)
+        generated = augmentation.process(corpus)
+        self.assertEqual(len(generated),len(corpus))
+
+    def test_data_augmentation(self):
+        '''Checks if augmentation works normally'''
+
+        corpus = [('ELA ME DAR VÁRIOS LIVRO [PONTO]','DAR_3S_2S VÁRIOS LIVRO [PONTO]'),
+                  ('ELE PEDIR ELA SE ELA CONHECER ELE [PONTO]', 'PERGUNTAR_3S_3S CONHECER [PONTO]')]
+        length = 5
         augmentation = Directionality_Augmentation(max_new_sentences = length)
         generated = augmentation.process(corpus)
         self.assertEqual(len(generated),len(corpus) + length)

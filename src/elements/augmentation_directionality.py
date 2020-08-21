@@ -58,7 +58,6 @@ class Directionality_Augmentation(PipelineElement):
         _pronoun_pattern,
         _verb_pattern,
     )
-
     def __init__(self, *args, **kwargs):
         """
         Keyword Arguments:
@@ -90,21 +89,9 @@ class Directionality_Augmentation(PipelineElement):
                 self._pattern_agent_verb + "|" + self._pattern_pronoun_verb, gr
             )
             search_pattern_gi = re.findall(self._gi_pattern, gi)
-            # Gets all patterns in GI
-            gi_verbs = re.findall(self._gi_verb_pattern, gi)
-
-            # Return only pattern agent verb who if contains gi verbs
-            result_pattern_agent_verb = []
-            for gi_verb in gi_verbs:
-                for pattern in search_pattern_agent_verb:
-                    if gi_verb in pattern:
-                        result_pattern_agent_verb.append(pattern)
-
-            search_pattern_agent_verb = result_pattern_agent_verb
 
         except Exception as e:
-            print("find_pattern:", e)
-            print(phrase_gr_gi)
+            raise e
         finally:
             return search_pattern_agent_verb, search_pattern_gi
 
@@ -233,46 +220,44 @@ class Directionality_Augmentation(PipelineElement):
         # gets both [pronome reto -> verbo -> pronome reto]
         # and [pronome reto -> pronome obliquo -> verbo]
         search_pattern_agent_verb, search_pattern_gi = self.find_pattern(gr_gi_tuple)
+        # find all verbs in GI
+        gi_verbs = re.findall(self._gi_verb_pattern, gr_gi_tuple[1])
         # * [pronome reto -> verbo -> pronome reto]
         # [pronome reto -> pronome obliquo -> verbo]
-        if search_pattern_agent_verb and search_pattern_gi:
-
-            # find all verbs in GI
-            gi_verbs = re.findall(self._gi_verb_pattern, gr_gi_tuple[1])
-            # Creates new phrases for each pattern
-            # [pronome reto -> pronome obliquo -> verbo]
-            for i, patterns_gi in enumerate(search_pattern_gi):
-                gr, gi = self.new_patterns(search_pattern_agent_verb[i], gi_verbs[i])
-                new_patterns_gr.append(gr)
-                new_patterns_gi.append(gi)
-
-            # Combinating patterns of the newly created phrases
-            combination_patterns_gr = product(*new_patterns_gr)
-            combination_patterns_gi = product(*new_patterns_gi)
-
-            for combination_gr in combination_patterns_gr:
-                # New Patterns for GI
-                combination_gi = next(combination_patterns_gi)
-
-                # Generates new phrases [befores_string + pattern + after_string]
-                # if the following pattern is encountered
-                # [pronome reto -> pronome obliquo -> verbo]
-                # Generates new phrases [befores_string + pattern + after_string]
-                # if the following pattern is encountered
-                # [pronome reto -> verbo -> pronome reto]
-                new_phrases.add(
-                    self.assembly_phrase(
-                        gr_gi_tuple,
-                        search_pattern=search_pattern_agent_verb,
-                        combination_gr=combination_gr,
-                        combination_gi=combination_gi,
-                    )
-                )
+        if search_pattern_agent_verb and search_pattern_gi and len(search_pattern_agent_verb) == len(search_pattern_gi):
             try:
+                # Creates new phrases for each pattern
+                # [pronome reto -> pronome obliquo -> verbo]
+                for i, patterns_gi in enumerate(search_pattern_gi):
+                    gr, gi = self.new_patterns(search_pattern_agent_verb[i], gi_verbs[i])
+                    new_patterns_gr.append(gr)
+                    new_patterns_gi.append(gi)
+
+                # Combinating patterns of the newly created phrases
+                combination_patterns_gr = product(*new_patterns_gr)
+                combination_patterns_gi = product(*new_patterns_gi)
+
+                for combination_gr in combination_patterns_gr:
+                    # New Patterns for GI
+                    combination_gi = next(combination_patterns_gi)
+
+                    # Generates new phrases [befores_string + pattern + after_string]
+                    # if the following pattern is encountered
+                    # [pronome reto -> pronome obliquo -> verbo]
+                    # Generates new phrases [befores_string + pattern + after_string]
+                    # if the following pattern is encountered
+                    # [pronome reto -> verbo -> pronome reto]
+                    new_phrases.add(
+                        self.assembly_phrase(
+                            gr_gi_tuple,
+                            search_pattern=search_pattern_agent_verb,
+                            combination_gr=combination_gr,
+                            combination_gi=combination_gi,
+                        )
+                    )
                 new_phrases.remove(gr_gi_tuple)
-            except Exception as e:
-                # print(e)
-                pass
+            except Exception as ex:
+                raise ex
             finally:
                 return new_phrases
         else:
@@ -281,7 +266,6 @@ class Directionality_Augmentation(PipelineElement):
     def process(self, data):
         # Used to do the augmentation in phrases
         new_phrases = list()
-
         for phrase in data:
             new_phrases.extend(list(self.augmentation(phrase)))
 

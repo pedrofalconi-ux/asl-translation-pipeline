@@ -24,7 +24,8 @@ class TestDirectionalityAugmentation(unittest.TestCase):
         '''Checks if augmentation works normally'''
 
         corpus = [('ELA ME DAR VÁRIOS LIVRO [PONTO]','DAR_3S_2S VÁRIOS LIVRO [PONTO]'),
-                  ('ELE PEDIR ELA SE ELA CONHECER ELE [PONTO]', 'PERGUNTAR_3S_3S CONHECER [PONTO]')]
+                  ('ELE PEDIR ELA SE ELA CONHECER ELE [PONTO]', 'PERGUNTAR_3S_3S CONHECER [PONTO]'),
+                  ('DEFENDER JESUÍTAS QUE HAVER SER EXPULSOS MARQUÊS POMBAL UM MIL SETECENTOS E CINQUENTA E NOVE DECLARAR NÃO ESQUECER NUNCA BOM ENSINAMENTO INSTRUÇÃO QUE ELES DAR EU [PONTO]', 'DEFENDER JESUÍTA EXPULSAR MARQUÊS POMBAL ANO&DATA um mil setecentos e cinquenta e nove DECLARAR NÃO_ESQUECER NUNCA ENSINAR_1S_2S INSTRUÇÃO DAR_3S_2S [PONTO]')]
         length = 5
         augmentation = Directionality_Augmentation(max_new_sentences = length)
         generated = augmentation.process(corpus)

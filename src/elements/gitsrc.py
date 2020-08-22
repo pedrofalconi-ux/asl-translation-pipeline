@@ -21,7 +21,7 @@ class GitSrcElement(PipelineElement):
 
         self._commit = kwargs['commit']
         self._remote = kwargs['remote'] if 'remote' in kwargs \
-            else 'ssh://gitlab.lavid.ufpb.br/vlibras-deeplearning/corpus'
+            else 'ssh://git@gitlab.lavid.ufpb.br/vlibras-deeplearning/corpus'
 
         self._folder = os.path.join(get_artifact_directory(), 'Source')
 

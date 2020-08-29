@@ -267,10 +267,12 @@ class Directionality_Augmentation(PipelineElement):
         # Used to do the augmentation in phrases
         new_phrases = list()
         for phrase in data:
-            new_phrases.extend(list(self.augmentation(phrase)))
+            augmentation_phrases = list(self.augmentation(phrase))
+            random.shuffle(augmentation_phrases)
+            new_phrases.extend(augmentation_phrases[:self._max_new_sentences])
 
         random.shuffle(new_phrases)
-        new_phrases = new_phrases[:self._max_new_sentences]
+        #new_phrases = new_phrases[:self._max_new_sentences]
         data = data + new_phrases
         return data
 

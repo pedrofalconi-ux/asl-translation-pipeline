@@ -11,14 +11,14 @@ from registry import register_element
 
 class PlacesAugmentation(PipelineElement):
     '''Data augmentation for lugares
-    '''    
+    '''
     name = 'place_augmentation'
 
     _fd = None
     _reader = None
     _path = None
-   
-    def __init__(self, *args, **kwargs):        
+
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         try:
             max_new_sentences = int(kwargs['max_new_sentences']) if 'max_new_sentences' in kwargs else 0
@@ -39,7 +39,7 @@ class PlacesAugmentation(PipelineElement):
         # data argummentation final gerado
         data_augmentation = self.generate(data, list_lugares)
         random.shuffle(data_augmentation)
-        data = data + data_augmentation[:self._max_new_sentences]
+        data = data + data_augmentation
         return data
 
     def generate(self, corpus_sample, list_lugares):
@@ -55,8 +55,8 @@ class PlacesAugmentation(PipelineElement):
                 # limita o numero de possibilidades caso exista mais de 3 lugares na mesma frase
                 literals = literals if len(literals) <= 3 else random.sample(literals, 3)
                 # verifica todas as opcoes possiveis de substituicao baseada na quantidade de literais encontrados
-                # e.g CHEGAR ONTEM JAPÃO VIAJAR PARA CHINA 
-                # Temos 2 possibilidades de alteracoes JAPÃO e CHINA 
+                # e.g CHEGAR ONTEM JAPÃO VIAJAR PARA CHINA
+                # Temos 2 possibilidades de alteracoes JAPÃO e CHINA
                 # Logo nossa lista de opcoes teremos tuplas com 2 elementos
                 # eg. ((JAPÃO, JAPÃO&PAÍS), (CHINA,CHINA&PAÍS))
                 ## ...

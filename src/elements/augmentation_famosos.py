@@ -11,14 +11,14 @@ from registry import register_element
 
 class FamososAugmentation(PipelineElement):
     '''Data augmentation for famosos
-    '''    
+    '''
     name = 'famosos_augmentation'
 
     _fd = None
     _reader = None
     _path = None
-   
-    def __init__(self, *args, **kwargs):        
+
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         try:
             max_new_sentences = int(kwargs['max_new_sentences']) if 'max_new_sentences' in kwargs else 0
@@ -39,7 +39,7 @@ class FamososAugmentation(PipelineElement):
         # data argummentation final gerado
         data_augmentation = self.generate(data, list_famosos)
         random.shuffle(data_augmentation)
-        data = data + data_augmentation[:self._max_new_sentences]
+        data = data + data_augmentation
         return data
 
     def generate(self, corpus_sample, list_famosos):
@@ -56,7 +56,7 @@ class FamososAugmentation(PipelineElement):
                 literals = literals if len(literals) <= 3 else random.sample(literals, 3)
                 # verifica todas as opcoes possiveis de substituicao baseada na quantidade de literais encontrados
                 # e.g SERGIO MORO CONVERSOU COM JAIR BOLSONARO
-                # Temos 2 possibilidades de alteracoes `SERGIO MORO` e `JAIR BOLSONARO` 
+                # Temos 2 possibilidades de alteracoes `SERGIO MORO` e `JAIR BOLSONARO`
                 # Logo nossa lista de opcoes teremos tuplas com 2 elementos
                 # eg. ((LUIZ EDUARDO RAMOS,LUIZ_EDUARDO_RAMOS&FAMOSO), (WAGNER MOURA,WAGNER_MOURA&FAMOSO))
                 ## ...

@@ -57,7 +57,7 @@ class IntensidadeAugmentation(PipelineElement):
     def _remove_intensifiers(self, data):
         """
         Remove intensificadores de GR e GI, e muda o intensificador de GR
-        para um simbolo pre-definido a fim de indentificar a posicao do 
+        para um simbolo pre-definido a fim de indentificar a posicao do
         itensificador
         Arguments:
             data {list} -- lista de tuplas com gr e gi
@@ -90,7 +90,7 @@ class IntensidadeAugmentation(PipelineElement):
         return augmentables_found
 
     def _augment(self, augmentables, gr, gi):
-        """Gera para cada linha de GR e GI as combinações com os intensificadores 
+        """Gera para cada linha de GR e GI as combinações com os intensificadores
         de acordo com as palavras aumentaveis na frase
         Arguments:
             augmentables {list} -- lista de palavras insenfificaveis encontrada na frase
@@ -139,23 +139,24 @@ class IntensidadeAugmentation(PipelineElement):
         data_wout_intensifiers = self._remove_intensifiers(data)
         augmented_lines = list()
         data = list(data)
-   
+
         # TODO remover final_augment,
         for line in data_wout_intensifiers:
             gr, gi = line
             augmentables_found = self._find_augmentables(
                 gr, gi, self._list_intesifiers)
             self._augment(augmentables_found, gr, gi)
-            augmented_lines.extend(self._augment_data)
+            aug_phrases = list(self._augment_data)
+            augmented_lines.extend(aug_phrases[:self._max_new_sentences])
             self._augment_data.clear()
         random.shuffle(augmented_lines)
-        
+
         # Remove orginal data for avoid duplicates data in corpus
         try:
             augmented_lines.remove(data[0])
         except Exception as e:
             pass
-        augmented_lines = augmented_lines[:self._max_new_sentences]
+        #augmented_lines = augmented_lines[:self._max_new_sentences]
 
         data.extend(augmented_lines)
 

@@ -64,7 +64,7 @@ class CounterElement(PipelineElement):
 
         with open(filepath, 'w') as fd:
             fd.write('Caso,Ocorrências\n')
-            for case_name, case_count in counts.iteritems():
+            for case_name, case_count in counts.items():
                 fd.write(f'{case_name},{case_count}\n')
 
         # forward output

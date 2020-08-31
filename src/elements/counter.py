@@ -18,6 +18,7 @@ class CounterElement(PipelineElement):
     # NOTE: expects directionality in VERB_1S_1S format, itensifiers afterwards
     # and "&" used as context marker.
     name = 'counter'
+    dont_use_cache = True
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -33,6 +34,10 @@ class CounterElement(PipelineElement):
             ('Negação', rf'NÃO_[{REGEX_LATIN}_]+'),
             ('Famosos', rf'[{REGEX_LATIN}_]+&FAMOS(A|O)'),
             ('Lugares', rf'[{REGEX_LATIN}_]+&(CIDADE|ESTADO|PAÍS)'),
+            ('Romanos', rf'^(?=[MDCLXVI])M*(C[MD]|D?C*)(X[CL]|L?X*)(I[XV]|V?I*)$'),
+            ('Ordinais', rf'[1-9][ºª]'),
+            ('Cardinais', rf'[0-9](?![SPºª0-9])'),
+            ('Contexto', rf'(?<!NÃO)(?<![1-3][SP])[_|&](?!\w*PAÍS|\w*ESTADO|\w*CIDADE|\w*[1-3][SP]|\w*[&|_]*FAMOSO)'),
             ('Básico', None)
         ]
 

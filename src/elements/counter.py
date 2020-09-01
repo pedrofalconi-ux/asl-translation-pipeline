@@ -49,7 +49,7 @@ class CounterElement(PipelineElement):
 
             # iterate through special cases, check for matches in sentence
             for case_name, case_regex in self._special_cases:
-                if case_regex and re.match(case_regex, gi):
+                if case_regex and re.search(case_regex, gi):
                     gi_has_matched = True
                     try:
                         counts[case_name] += 1

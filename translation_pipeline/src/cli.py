@@ -60,7 +60,7 @@ def execute(pipeline_expression, execution_comment):
 
 
 # Application entry point.
-if __name__ == '__main__':
+def main():
     here = os.path.dirname(os.path.abspath(__file__))
 
     parser = argparse.ArgumentParser()
@@ -68,15 +68,21 @@ if __name__ == '__main__':
         '-p', '--pipeline', help='Path to the pipeline JSON file.',
     )
     parser.add_argument(
-        '-c', '--corpus', help='Path to the corpus CSV file.', default=os.path.join(here, '..', 'data', 'corpus', 'corpus.csv')
+        '-c', '--corpus', help='Path to the corpus CSV file. Will replace any ocurrences of "CORPUS_PATH" in the pipeline JSON.',
+        default=os.path.join(here, '..', 'data', 'corpus', 'corpus.csv')
     )
     parser.add_argument(
-        '-t', '--train-hash', help='Train artifact hash, if running a test pipeline.', default=''
+        '-t', '--train-hash', help='Train artifact hash, if running a test pipeline. Will replace any ocurrences of "TRAIN_HASH" in the pipeline JSON.',
+        default=''
     )
     parser.add_argument(
         '-m', '--message', help='Execution message.', default=None
     )
     args, _ = parser.parse_known_args()
+
+    if not args.pipeline:
+        logger.error('The -p (or --pipeline) parameter is mandatory.')
+        quit(1)
 
     with open(args.pipeline, 'r') as pipeline_json_file:
         pipeline_json = pipeline_json_file.read().strip()
@@ -87,3 +93,6 @@ if __name__ == '__main__':
             execution_comment = input('Please describe this execution: ')
 
         execute(pipeline_expression, execution_comment)
+
+if __name__ == '__main__':
+    main()

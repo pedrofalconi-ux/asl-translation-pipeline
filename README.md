@@ -19,9 +19,12 @@
 This repository contains the implementation of a generic data processing pipeline, plus several elements which allow it to be used for corpus pre-processing, translation, augmentation and finally, model training.
 
 ### Prerequisites
-- Python 3.6
-- `rhash` installed and available in your `PATH` environment variable.
-- Possibly other `pip` packages depending on which elements are used.
+- Python >= 3.6
+- Other packages, depending on which elements are used:
+  - For `csvsrc` and `filesrc`: `rhash` binary installed and available in `$PATH`
+  - For `translate`: `tqdm` installed via pip (and the relevant `vlibras-translate` dependencies. See that repository for more details)
+  - For `learn_bpe`: `subword-nmt` available in `$PATH`.
+  - For `binarize`, `train` and `interactive_score`: `fairseq` installed via pip and its commands available in `$PATH`.
 
 ### Cloning and Installation
 This git repository uses submodules. As such, either manually initialize them yourself after cloning or pass `--recurse-submodules` to the `git clone` call.
@@ -36,9 +39,9 @@ artifact_hash = execute('<PIPELINE JSON>', '<USER COMMENT>')
 ```
 
 #### Via CLI
-The `cli.py` file can also act as an entry point. Usage is as follows:
+The `cli.py` file also acts as an entry point. Usage is as follows:
 ```
-usage: cli.py [-h] [-p PIPELINE] [-c CORPUS] [-t TRAIN_HASH] [-m MESSAGE]
+usage: translation-pipeline [-h] [-p PIPELINE] [-c CORPUS] [-t TRAIN_HASH] [-m MESSAGE]
 
 optional arguments:
   -h, --help            show this help message and exit

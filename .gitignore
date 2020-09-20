@@ -1,9 +1,10 @@
 __pycache__
+*.egg-info
 .vscode
 artifacts
 cache
-data/corpus
 logs
+scripts
 tmp
+translation_pipeline/data/corpus
 execution_log.csv
-

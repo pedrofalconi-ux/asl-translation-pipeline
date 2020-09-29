@@ -87,7 +87,9 @@ class ApplyBpeElement(PipelineElement):
 
                 # Run apply bpe on set_corp files
                 logger.debug(f'Running apply_bpe.py on {file_to_apply_bpe_on}')
-                os.system(f'subword-nmt apply-bpe -c {self._bpe_code} < {file_to_apply_bpe_on} > {output_file}')
+
+                if os.system(f'subword-nmt apply-bpe -c {self._bpe_code} < {file_to_apply_bpe_on} > {output_file}'):
+                    raise Exception('Error running subword-nmt')
 
 # Add element to the registry.
 register_element(ApplyBpeElement)

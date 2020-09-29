@@ -36,9 +36,11 @@ class BinarizeElement(PipelineElement):
             logger.warning('There are already files in the BIN folder. Skipping step...')
             return
 
-        fairseq_preprocess_cmd = f'fairseq-preprocess -s gr -t gi --trainpref {self._train_pref} --validpref {self._valid_pref} --destdir {self._dest_dir}'
+        fairseq_preprocess_cmd = f'fairseq-preprocess -s gr -t gi --trainpref "{self._train_pref}" --validpref "{self._valid_pref}" --destdir "{self._dest_dir}"'
         logger.debug(f'Running: {fairseq_preprocess_cmd}')
-        os.system(fairseq_preprocess_cmd)
+
+        if os.system(fairseq_preprocess_cmd):
+            raise Exception('Error running fairseq-preprocess')
 
 
 # Add element to the registry.

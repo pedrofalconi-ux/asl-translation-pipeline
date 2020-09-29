@@ -6,6 +6,7 @@ from shutil import copy2
 from artifact import get_artifact_directory
 from elements.element import PipelineElement
 from registry import register_element
+from utils import resolve_relative_path
 
 logger = logging.getLogger(__name__)
 
@@ -27,10 +28,10 @@ class InteractiveScoreElement(PipelineElement):
         self._train_bin = os.path.join(self._train_link_folder, 'BIN')
 
         # get train checkpoint symlink
-        self._checkpoint_path = os.path.join(self._train_link_folder, 'checkpoint_best.pt')
+        self._checkpoint_path = os.path.realpath(os.path.join(self._train_link_folder, 'checkpoint_best.pt'))
 
         # get test parameters json
-        self._cfg_path = kwargs['parameters']
+        self._cfg_path = resolve_relative_path(kwargs['parameters'])
 
 
     def _read_parameters_json(self, json_path):
@@ -55,7 +56,8 @@ class InteractiveScoreElement(PipelineElement):
             str_parameters += f' {key} {value}'
 
         # traduzir com o interactive
-        os.system(f'fairseq-interactive {self._train_bin} --path {data_path} {str_parameters} --remove-bpe < {data_src} | tee {file_out_name}')
+        if os.system(f'fairseq-interactive "{self._train_bin}" --path "{data_path}" {str_parameters} --remove-bpe < "{data_src}" > "{file_out_name}"'):
+            raise Exception('Error running fairseq-interactive')
 
         return file_basename_wout_ext
 
@@ -64,12 +66,14 @@ class InteractiveScoreElement(PipelineElement):
         data_ref = os.path.join(get_artifact_directory(), 'Preprocessed', 'test.gi')
         file_out_name = os.path.join(get_artifact_directory(), f'{file_name}.out')
         file_hypo = os.path.join(get_artifact_directory(), f'{file_name}.h')
+        file_bleu = os.path.join(get_artifact_directory(), f'{file_name}.bleu')
 
         # pegar as traduções
-        os.system(f'grep ^H {file_out_name} | cut -f3- > {file_hypo}')
+        os.system(f'grep ^H "{file_out_name}" | cut -f3- > "{file_hypo}"')
 
         # calcular o BLEU
-        os.system(f'fairseq-score --sys {file_hypo} --ref {data_ref}')
+        if os.system(f'fairseq-score --sys "{file_hypo}" --ref "{data_ref}" > "{file_bleu}"'):
+            raise Exception('Error running fairseq-score')
 
 
     def process(self, data=None):

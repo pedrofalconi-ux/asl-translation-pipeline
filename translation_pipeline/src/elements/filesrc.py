@@ -1,6 +1,6 @@
 from elements.element import PipelineElement
 from registry import register_element
-from utils import get_file_md5_hash
+from utils import get_file_md5_hash, resolve_relative_path
 
 class FileSrcElement(PipelineElement):
     '''Reads from a file.'''
@@ -15,7 +15,7 @@ class FileSrcElement(PipelineElement):
         super().__init__(*args, **kwargs)
 
         try:
-            self._path = kwargs['path']
+            self._path = resolve_relative_path(kwargs['path'])
             self._binary = getattr(kwargs, 'binary', False)
             self._fd = open(kwargs['path'], 'rb' if self._binary else 'r')
         except KeyError:

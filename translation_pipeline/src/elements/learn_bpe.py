@@ -68,11 +68,13 @@ class LearnBpeElement(PipelineElement):
             return
 
         # concatenation of preprocessed gr and gi to a single train file
-        os.system(f'cat {preprocessed_train_gr_file} {preprocessed_train_gi_file} > {self._train_concat_corpus}')
+        os.system(f'cat "{preprocessed_train_gr_file}" "{preprocessed_train_gi_file}" > "{self._train_concat_corpus}"')
 
         # run learn bpe using the concatenated file, with 'bpe_tokens'(number) merge operations
         logger.debug(f'Running learn_bpe.py on {self._train_concat_corpus}')
-        os.system(f'subword-nmt learn-bpe -s {self._bpe_tokens} < {self._train_concat_corpus} > {self._bpe_code}')
+
+        if os.system(f'subword-nmt learn-bpe -s "{self._bpe_tokens}" < "{self._train_concat_corpus}" > "{self._bpe_code}"'):
+            raise Exception('Error running subword-nmt')
 
 # Add element to the registry.
 register_element(LearnBpeElement)

@@ -2,7 +2,7 @@ import csv
 
 from elements.element import PipelineElement
 from registry import register_element
-from utils import get_file_md5_hash
+from utils import get_file_md5_hash, resolve_relative_path
 
 class CsvSrcElement(PipelineElement):
     '''Reads from a `.csv` file.'''
@@ -16,12 +16,10 @@ class CsvSrcElement(PipelineElement):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        try:
-            self._path = kwargs['path']
-            self._fd = open(self._path, 'r', newline='')
-            self._reader = csv.reader(self._fd) 
-        except KeyError:
+        if 'path' not in kwargs:
             raise ValueError('`csvsrc` requires a `path` parameter.')
+
+        self._path = resolve_relative_path(kwargs['path'])
 
     def get_cache_key(self):
         # Cache key is the MD5 hash of the file itself. This way, even if the
@@ -33,14 +31,12 @@ class CsvSrcElement(PipelineElement):
         if data is None:
             data = []
 
-        for row in self._reader:
-            if row:
-                data.append(row[:2])
-        return data
+        with open(self._path, 'r', newline='') as fd:
+            for row in csv.reader(fd):
+                if row:
+                    data.append(row[:2])
 
-    def __del__(self):
-        if self._fd:
-            self._fd.close()
+        return data
 
 # Add element to the registry.
 register_element(CsvSrcElement)

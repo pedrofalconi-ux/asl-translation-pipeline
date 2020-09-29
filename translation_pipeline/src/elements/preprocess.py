@@ -6,6 +6,7 @@ from globalstore import add_to_store, fetch_from_store
 from utils import add_submodule_to_sys_path
 from elements.element import PipelineElement
 from registry import register_element
+from utils import resolve_relative_path
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +15,6 @@ class PreprocessElement(PipelineElement):
     training. See methods below to know what they are.
     '''
     name = 'preprocess'
-
 
     def _prepare_homonyms_dict(self, homonyms_csv_filepath):
         '''Prepares context pairs in a dictionary, for context marker
@@ -95,7 +95,9 @@ class PreprocessElement(PipelineElement):
 
             # Instantiate context pairs for context marker replacement.
             try:
-                self._homonyms = self._prepare_homonyms_dict(kwargs['homonyms_csv_path'])
+                self._homonyms = self._prepare_homonyms_dict(
+                    resolve_relative_path(kwargs['homonyms_csv_path'])
+                )
             except AttributeError:
                 raise ValueError('`preprocess` requires a `homonyms_csv_path` parameter if `replace_context_markers` is enabled.')
 

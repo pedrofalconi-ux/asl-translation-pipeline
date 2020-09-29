@@ -6,6 +6,7 @@ from shutil import copy2
 from artifact import get_artifact_directory
 from elements.element import PipelineElement
 from registry import register_element
+from utils import resolve_relative_path
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +22,7 @@ class TrainElement(PipelineElement):
 
         self._artifact_folder_path = get_artifact_directory()
         try:
-            self._train_parameters_path = kwargs['parameters']
+            self._train_parameters_path = resolve_relative_path(kwargs['parameters'])
         except KeyError:
             raise ValueError(f'`{self.name}` requires a `parameters` parameter.')
 
@@ -55,7 +56,9 @@ class TrainElement(PipelineElement):
 
         # Run Fairseq training
         logger.debug(f'Running: {str_parameters}')
-        os.system(str_parameters)
+
+        if os.system(str_parameters):
+            raise Exception('Error running fairseq-train')
 
 
 # Add element to the registry.

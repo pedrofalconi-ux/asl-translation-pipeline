@@ -31,3 +31,15 @@ def add_submodule_to_sys_path(submodule_name):
 
     sys.path.insert(0, get_submodule_path(submodule_name))
     modules_in_path.add(submodule_name)
+
+def resolve_relative_path(relative_path):
+    '''Resolves a relative path, using the pipeline module folder as the root
+    directory.
+    '''
+    if relative_path.startswith('/') or relative_path.startswith('\\'):
+        # already an absolute path, bail
+        return relative_path
+
+    return os.path.realpath(
+        os.path.join(os.path.dirname(__file__), '..', relative_path)
+    )

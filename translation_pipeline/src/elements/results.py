@@ -4,7 +4,7 @@ import os
 from artifact import get_artifact_directory
 from elements.element import PipelineElement
 from registry import register_element
-from utils import add_submodule_to_sys_path
+from utils import add_submodule_to_sys_path, resolve_relative_path
 
 class ResultsElement(PipelineElement):
     '''Output CSV file with test results.'''
@@ -15,7 +15,7 @@ class ResultsElement(PipelineElement):
 
         try:
             # Original test corpus, for extracting the PT-BR column
-            self._corpus_path = os.path.join(get_artifact_directory(), kwargs['corpus_file'])
+            self._corpus_path = resolve_relative_path(kwargs['corpus_file'])
 
             self._gr_path = os.path.join(get_artifact_directory(), 'Preprocessed/test.gr')
             self._gi_path = os.path.join(get_artifact_directory(), 'Preprocessed/test.gi')

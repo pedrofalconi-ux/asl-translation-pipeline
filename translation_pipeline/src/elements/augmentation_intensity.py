@@ -1,13 +1,14 @@
 import re
 import random
 import csv
-import logging
-
 from elements.element import PipelineElement
 from registry import register_element
-from utils import resolve_relative_path
+import logging
+from itertools import product
 
 logger = logging.getLogger(__name__)
+
+REGEX_LATIN = 'A-ZÁÉÍÓÚÀÂÊÔÃÕÜÇa-záéíóúàâêôãõüç'
 
 class IntensidadeAugmentation(PipelineElement):
     """Data augmentation for Intensifier
@@ -20,6 +21,7 @@ class IntensidadeAugmentation(PipelineElement):
     Returns:
         [type] -- [description]
     """
+
     name = "intensidade_augmentation"
     _intensifiers = {
         "(+)": [
@@ -30,24 +32,27 @@ class IntensidadeAugmentation(PipelineElement):
             "MUITO",
             "BASTANTE",
             "DEMAIS",
+            "TAO",
+            "TÃO",
         ],
         "(-)": ["MENOS", "POUCO", "POUQUISSIMO"],
         "": "",
     }
     # Reestruturando intensifiers para uso no augmentation
+    _intensifiers_words = []
     _structured_intensifiers = {}
     for key, values in _intensifiers.items():
         for value in values:
             _structured_intensifiers[value] = key
+            _intensifiers_words.append(value)
     _augment_data = set()
     _intensifiers_sub = "!!!"  # marcador de intensificador na frase
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, intensifiers_list_path, *args, **kwargs):
         super().__init__(*args, **kwargs)
         try:
             # this is slice index thus the None as default value
             max_new_sentences = int(kwargs['max_new_sentences']) if 'max_new_sentences' in kwargs else 0
-            intensifiers_list_path = resolve_relative_path(kwargs['path'])
             self._max_new_sentences = max_new_sentences if max_new_sentences else None
             with open(intensifiers_list_path, encoding="utf8") as f:
                 self._list_intesifiers = {item.strip() for item in f}
@@ -56,7 +61,7 @@ class IntensidadeAugmentation(PipelineElement):
                 "`intensidade_augmentation` requires `path` parameter."
             )
 
-    def _remove_intensifiers(self, data):
+    def _remove_intensifiers(self, gr, gi):
         """
         Remove intensificadores de GR e GI, e muda o intensificador de GR
         para um simbolo pre-definido a fim de indentificar a posicao do
@@ -66,32 +71,22 @@ class IntensidadeAugmentation(PipelineElement):
         Returns:
             list -- list de tuplas de data modificadas
         """
-        phrase_wout_intensifiers = []
-        for line in data:
-            gr_line, gi_line = line
-            for key in self._structured_intensifiers:
-                gr_line = gr_line.replace(key, self._intensifiers_sub)
-                gi_line = gi_line.replace(
-                    self._structured_intensifiers[key], "")
-            phrase_wout_intensifiers.append((gr_line, gi_line))
-        return phrase_wout_intensifiers
+        splited_gr = gr.split()
 
-    def _find_augmentables(self, gr, gi, list_intesifiers):
-        """Lista todas as palavras aumentaveis na frase
-        Arguments:
-            gr {string} -- Frases com intensificadores por extenso (MUITO, POUCO, ...)
-            gi {string} -- Frases com intesificadores com sinais (+,-)
-            list_intesifiers {dict} -- Palavras intensificaveis
-        Returns:
-            list -- lista com as palavras intensificaveis encontradas em gr e gi
-        """
-        augmentables_found = []
-        for word in gi.split():
-            if word in list_intesifiers and word in gr:
-                augmentables_found.append(word)
-        return augmentables_found
+        for index, word in enumerate(gr.split()):
+            if word in self._list_intesifiers:
+                if splited_gr[index-1] in self._structured_intensifiers and index > 0:
+                    splited_gr[index-1] = self._intensifiers_sub
+                else:
+                    if splited_gr[index+1] in self._structured_intensifiers:
+                        splited_gr[index+1] = self._intensifiers_sub
+        
+        replaced_gr = ' '.join(splited_gr)
+        replaced_gi = re.sub(r'\([+-]+\)', self._intensifiers_sub, gi)
 
-    def _augment(self, augmentables, gr, gi):
+        return replaced_gr, replaced_gi
+
+    def _augment(self, replaced_gr, replaced_gi):
         """Gera para cada linha de GR e GI as combinações com os intensificadores
         de acordo com as palavras aumentaveis na frase
         Arguments:
@@ -99,68 +94,48 @@ class IntensidadeAugmentation(PipelineElement):
             gr {string} -- Frases com intensificadores por extenso (MUITO, POUCO, ...)
             gi {string} -- Frases com intesificadores com sinais (+, -)
         """
-        temp = gr, gi
-        for item in self._structured_intensifiers:
-            for word in augmentables:
-                prefix = f"{self._intensifiers_sub} {word}"
-                posfix = f"{word} {self._intensifiers_sub}"
-                # As expressoes abaixo definirao a frase a ser gerada com base na palavra aumentavel na frase
-                # e na posicao  que o identificador de aumentavel se encontra
-                if re.search(prefix, temp[0]):
-                    temp = (
-                        re.sub(prefix, f"{item} {word}", temp[0]),
-                        re.sub(
-                            f"{word}(\([+-]\))*",
-                            f"{word}{self._structured_intensifiers[item]}",
-                            temp[1],
-                        ),
-                    )
-                    self._augment(augmentables[-1:], temp[0], temp[1])
-                elif re.search(posfix, temp[0]):
-                    temp = (
-                        re.sub(posfix, f"{word} {item}", temp[0]),
-                        re.sub(
-                            f"{word}(\([+-]\))*",
-                            f"{word}{self._structured_intensifiers[item]}",
-                            temp[1],
-                        ),
-                    )
-                    self._augment(augmentables[-1:], temp[0], temp[1])
-                else:
-                    self._augment_data.add(temp)
-                    return
-            temp = gr, gi
+        augmented_phrase = []
+        gr, gi = replaced_gr, replaced_gi
+        intensifiers_combinations = product(self._intensifiers_words,repeat=len(re.findall(r'\!\!\!',gr)))
+        intensifiers_combinations_list = [i for i in intensifiers_combinations]
+        random.shuffle(intensifiers_combinations_list)
+        intensifiers_combinations_list = intensifiers_combinations_list[:self._max_new_sentences]
+
+        for line_comb in intensifiers_combinations_list:
+
+            gr_for_aug, gi_for_aug = gr,gi
+
+            for word_comb in line_comb:
+                gr_for_aug = gr_for_aug.replace(self._intensifiers_sub, word_comb, 1)
+                gi_for_aug = gi_for_aug.replace(self._intensifiers_sub, self._structured_intensifiers[word_comb], 1)
+            
+            augmented_phrase.append((gr_for_aug,gi_for_aug))
+        
+        return augmented_phrase
+
 
     def process(self, data):
         """Funcao de entrada, que executa as outras da classe
         Arguments:
             data {list} -- data contendo gr e gi
         Returns:
-            [list] -- data com o augment concluido
+            [list] -- data com o augment concluido]
         """
-        data_wout_intensifiers = self._remove_intensifiers(data)
-        augmented_lines = list()
-        data = list(data)
 
-        # TODO remover final_augment,
-        for line in data_wout_intensifiers:
-            gr, gi = line
-            augmentables_found = self._find_augmentables(
-                gr, gi, self._list_intesifiers)
-            self._augment(augmentables_found, gr, gi)
-            aug_phrases = list(self._augment_data)
-            augmented_lines.extend(aug_phrases[:self._max_new_sentences])
-            self._augment_data.clear()
-        random.shuffle(augmented_lines)
+        augmented_phrases = []
+        wrong_sentences = []
+        for gr,gi in data:
 
-        # Remove orginal data for avoid duplicates data in corpus
-        try:
-            augmented_lines.remove(data[0])
-        except Exception as e:
-            pass
-        #augmented_lines = augmented_lines[:self._max_new_sentences]
+            if re.search(r'\([+-]+\)', gi):
+                replaced_gr, replaced_gi = self._remove_intensifiers(gr,gi)
 
-        data.extend(augmented_lines)
+                if len(re.findall(self._intensifiers_sub, replaced_gr)) == len(re.findall(self._intensifiers_sub, replaced_gi)):
+                    augmented_phrases.extend(self._augment(replaced_gr, replaced_gi))
+                elif len(re.findall(self._intensifiers_sub, replaced_gi)) >= 1 or len(re.findall(self._intensifiers_sub, replaced_gr)) >= 1:
+                    wrong_sentences.append((gr, gi))
+
+        random.shuffle(augmented_phrases)
+        data.extend(augmented_phrases)
 
         return data
 

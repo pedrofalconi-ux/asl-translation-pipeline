@@ -1,10 +1,12 @@
 import re
 import random
 import csv
-from elements.element import PipelineElement
-from registry import register_element
 import logging
 from itertools import product
+
+from elements.element import PipelineElement
+from registry import register_element
+from utils import resolve_relative_path
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +25,8 @@ class IntensidadeAugmentation(PipelineElement):
     """
 
     name = "intensidade_augmentation"
+    version = 2
+
     _intensifiers = {
         "(+)": [
             "EXTREMAMENTE",
@@ -48,11 +52,12 @@ class IntensidadeAugmentation(PipelineElement):
     _augment_data = set()
     _intensifiers_sub = "!!!"  # marcador de intensificador na frase
 
-    def __init__(self, intensifiers_list_path, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         try:
             # this is slice index thus the None as default value
             max_new_sentences = int(kwargs['max_new_sentences']) if 'max_new_sentences' in kwargs else 0
+            intensifiers_list_path = resolve_relative_path(kwargs['path'])
             self._max_new_sentences = max_new_sentences if max_new_sentences else None
             with open(intensifiers_list_path, encoding="utf8") as f:
                 self._list_intesifiers = {item.strip() for item in f}

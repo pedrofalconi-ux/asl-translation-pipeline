@@ -7,6 +7,7 @@ import itertools
 from artifact import get_artifact_directory
 from elements.element import PipelineElement
 from registry import register_element
+from utils import resolve_relative_path
 
 REGEX_LATIN = 'A-ZÁÉÍÓÚÀÂÊÔÃÕÜÇa-záéíóúàâêôãõüç'
 
@@ -14,6 +15,7 @@ class NegationAugmentation(PipelineElement):
     '''Data augmentation for Negation
     '''
     name = 'negation_augmentation'
+    version = 2
 
     _fd = None
     _reader = None
@@ -24,7 +26,7 @@ class NegationAugmentation(PipelineElement):
         try:
             max_new_sentences = int(kwargs['max_new_sentences']) if 'max_new_sentences' in kwargs else 0
             self._max_new_sentences = max_new_sentences if max_new_sentences else None
-            self._path = kwargs['path']
+            self._path = resolve_relative_path(kwargs['path'])
             self._fd = open(self._path, 'r')
             self._reader = csv.reader(self._fd)
         except KeyError:

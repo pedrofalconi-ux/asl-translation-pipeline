@@ -2,17 +2,19 @@ import os
 import re
 import csv
 import random
-from itertools import permutations
+from itertools import product
 
 from artifact import get_artifact_directory
 from elements.element import PipelineElement
 from registry import register_element
-from utils import resolve_relative_path
+
+valid_chars = "A-ZÁÉÍÓÚÀÂÊÔÃÕÜÇa-záéíóúàâêôãõüç"
 
 class PlacesAugmentation(PipelineElement):
     '''Data augmentation for lugares
     '''
     name = 'place_augmentation'
+    not_phrases = set()
 
     _fd = None
     _reader = None
@@ -22,8 +24,10 @@ class PlacesAugmentation(PipelineElement):
         super().__init__(*args, **kwargs)
         try:
             max_new_sentences = int(kwargs['max_new_sentences']) if 'max_new_sentences' in kwargs else 0
+            new_places_total = int(kwargs['total_places']) if 'total_places' in kwargs else 3
+            self._new_places_total = new_places_total if new_places_total else None
             self._max_new_sentences = max_new_sentences if max_new_sentences else None
-            self._path = resolve_relative_path(kwargs['path'])
+            self._path = kwargs['path']
             self._fd = open(self._path, 'r')
             self._reader = csv.reader(self._fd)
         except KeyError:
@@ -31,65 +35,131 @@ class PlacesAugmentation(PipelineElement):
                 '`lugares_augmentation` requires `path` and `max_new_sentences` parameter.')
 
     def process(self, data):
-        list_lugares = list()
-        # leitura do arquivo de lugares
-        for item in self._reader:
-            list_lugares.append((item[0], item[1]))
+        aug_data = list()    # the function will return a list with all augmented places
 
-        # data argummentation final gerado
-        data_augmentation = self.generate(data, list_lugares)
-        random.shuffle(data_augmentation)
-        data = data + data_augmentation
-        return data
+        list_places = {} # dictionary with the lists for each type of place: Country, State and City
+        countries = []  # list with every place that is a country (has the '&PAÍS' identifier) found in the 'lugares.csv' file
+        states = []  # list with every place that is a states (has the '&ESTADO' identifier) found in the 'lugares.csv' file
+        cities = []  # list with every place that is a city (has the '&CIDADE' identifier) found in the 'lugares.csv' file
 
-    def generate(self, corpus_sample, list_lugares):
-        data = set()
-        # mascaramento para evitar substituicoes erradas
-        wrapper = lambda place: place[:1] + '<mark>' + place[1:]
-        unrwrapper = lambda place: place.replace('<mark>', '')
+        for row in self._reader:  # goes through each place of the 'lugares.csv' file, checking what type of place it is by its identifier, and putting it in the correct list
+            if re.search('PAÍS',row[1]):
+                countries.append(row[1])
+            elif re.search('ESTADO',row[1]):
+                states.append(row[1])
+            elif re.search('CIDADE',row[1]):
+                cities.append(row[1])
 
-        for row_gr, row_gi in corpus_sample:
-            # procura por nomes na linha tual baseada na lista de lugares `list_lugares`
-            literals = self.row_search(row_gr, row_gi, list_lugares)
-            if literals:
-                # limita o numero de possibilidades caso exista mais de 3 lugares na mesma frase
-                literals = literals if len(literals) <= 3 else random.sample(literals, 3)
-                # verifica todas as opcoes possiveis de substituicao baseada na quantidade de literais encontrados
-                # e.g CHEGAR ONTEM JAPÃO VIAJAR PARA CHINA
-                # Temos 2 possibilidades de alteracoes JAPÃO e CHINA
-                # Logo nossa lista de opcoes teremos tuplas com 2 elementos
-                # eg. ((JAPÃO, JAPÃO&PAÍS), (CHINA,CHINA&PAÍS))
-                ## ...
-                # No caso temos 48 (lista de lugares), 2 (lugares encontrados na linha)
-                # Calculando o total de possibilidades temos 48 x 47 = 2256 possibilidades
-                perm = list(permutations(list_lugares, len(literals)))
-                random.shuffle(perm)
-                # Pegamos apenas uma amostra do total geral (caso _max_new_sentences for 0 todas as sentencas serao retornadas)
-                sample = perm[:self._max_new_sentences]
-                for _tuple in sample:
-                    gr, gi = row_gr, row_gi
-                    # Substitui os literais encontrados na linha pelos lugares que estao na lista
-                    # Como podemos ter mais de um literal na mesma linha, so devemos adicionar a frase a nossa lista de augmentation
-                    # quando toda linha for atualizada
-                    for name, literal in zip(_tuple, literals):
-                        gr = re.sub(literal[0], wrapper(name[0]), gr)
-                        gi = re.sub(literal[1], wrapper(name[1]), gi)
-                    data.add((unrwrapper(gr), unrwrapper(gi)))
-        # garante que nenhuma frase gerada sera igual ao corpus de entrada
-        return list(data.difference(corpus_sample))
+        list_places['PAÍS'] = countries # inserts the list of countries into the dictionary
+        list_places['ESTADO'] = states # inserts the list of states into the dictionary
+        list_places['CIDADE'] = cities # inserts the list of cities into the dictionary
 
-    def row_search(self, row_gr, row_gi, list_lugares):
-        _list = set()
-        for item_gr, item_gi in list_lugares:
-            # verifica se existe o nome na linha, caso existe deve conter o mesmo numero de aparicao no gr e gi
-            # considerando que item_gr = CHINA e gi = CHINA&PAÍS temos:
-            # e.g. CHINA  E GRANDE, CHINA&PAÍS GRANDE
-            # len(gr) = 1 e len(gi) = 1
-            # e.g. CHINA  E GRANDE, JAPÃO&PAÍS GRANDE
-            # len(gr) = 1 e len(gi) = 0
-            if len(re.findall(item_gr, row_gr)) >= 1 and len(re.findall(item_gr, row_gr)) == len(re.findall(item_gi, row_gi)):
-                _list.add((item_gr, item_gi))
-        return list(_list)
+        for phrase in data: # Generate the augmentation for each sentence of the corpus, adding them to a set
+            aug_phrases = self.generate(phrase, list_places, self._max_new_sentences, self._new_places_total)
+            aug_phrases_list = list(aug_phrases)
+            for aug_phrase in aug_phrases_list:
+                aug_data.append(aug_phrase)
+
+        random.shuffle(aug_data)
+        data = data + list(aug_data)    # concatenates the original data with the augmented data (turned into a list)
+        return data          
+
+
+    def generate(self, data, places, max_new_sentences, max_num_places):
+        augmented_phrases = set()
+        gr, gi = data   # separates gr and gi in the sentence
+
+        # Searches for places in the sentence, storing the names in one list, the types in another and the gi pattern in another
+        gr_places_found, gi_places_found, gi_pattern = self.row_search(gr,gi,places)
+        gr_places_found = gr_places_found[:max_num_places]
+        gi_places_found = gi_places_found[:max_num_places]
+        gi_pattern = gi_pattern[:max_num_places]
+
+        splited_gr = self.split_phrase(gr, gr_places_found)  # splits the gr of the sentence into multiple sentences with one place in each
+        splited_gi = self.split_phrase(gi,gi_pattern)      # splits the gi of the sentence into multiple sentences with one place in each
+
+        # Creates all combinations of the places from the 'lugares.csv' file with their respective categories
+        
+        #print(gi_places_found)
+        founded_places = [places[i] for i in gi_places_found]
+        s = product(*founded_places)
+        possible_places = list(s)   # makes the combinations into a list
+        random.shuffle(possible_places) # shuffles the combinations in order to not always create the same structures
+        possible_places = [k for k in possible_places if len(k) == len(set(k))][:max_new_sentences] # removes repeated cases (e.g ('BRASIL', 'BRASIL')) and only takes the specified amount of combinations
+
+        if len(possible_places[0]) >= 1: # will only do the augmentation in case the element is not empty, i.e, there actually are places found in the sentence
+            for places_comb in possible_places:    # goes through every possible combination, which will be substitute the original places in the sentence
+                new_phrase_gr = [] # The new gr sentence generated
+                new_phrase_gi = [] # The new gi sentence generated
+
+                for pattern_gr, pattern_gi, item, part_gr, part_gi in zip(gr_places_found, gi_places_found, places_comb, splited_gr, splited_gi):
+                    # each place in the sentence will be replaced by one of the combinations
+
+                    ex = re.search(fr'([{valid_chars}_])+(?=&PAÍS|&ESTADO|&CIDADE)',item).group(0) # searches for all the places found and puts the in a list (e.g "EU AMAR BRASIL&PAÍS" returns just "BRASIL")
+                    new_phrase_gr.append(re.sub(pattern_gr, ex, part_gr)) # makes the replacement of the nth place in the sentence in the nth partitioned sentence for the 'gr'
+
+                    new_phrase_gi.append(re.sub(pattern_gr+'&'+pattern_gi, item, part_gi)) # makes the replacement of the nth place in the sentence in the nth partitioned sentence for the 'gi'
+                    
+                augmented_phrases.add((''.join(new_phrase_gr), ''.join(new_phrase_gi)))   # concatenates the split augmented sentences into one sentence, like the original, but with the correct replacements
+            
+        try:    # if the original sentence is found in the set of augmented sentences, then it's removed
+            augmented_phrases.remove((gr, gi))
+            return augmented_phrases
+        except: # otherwise the function will just return the augmented sentences
+            return augmented_phrases
+
+    def row_search(self, gr,gi,places):
+        """Searches the sentence for the places that are given in the `lugares.csv` file
+        and stores them in lists.
+
+        Args:
+            gr (string): The `gr` version of the sentence
+            gi (string): The `gi` version of the sentence
+            places (dict): Dictionary with lists of places for each type of place
+
+        Returns:
+            tuple: Returns the list of places found, the list of types of places according the the places found and the `gi` pattern for each place found
+        """
+        pattern =fr'([{valid_chars}_]+&(PAÍS|ESTADO|CIDADE))'
+        gr_places_found = []    # stores the cities/states/countries found in the sentence
+        gi_places_found = []    # stores the type of places found in the sentence (city, state or country) according to the places found (same order)
+                                # e.g "SOU DE MANAUS NO AMAZONAS/SOU MANAUS&CIDADE EM AMAZONAS&ESTADO", would create the lists ('MANAUS', 'AMAZONAS')
+                                # and ('CIDADE', 'ESTADO')
+
+        gi_pattern = []         #stores the patterns that will be used to replace the places in the 'gi'
+
+        for place in re.findall(pattern,gi):  # for each place found the place itself, the type of place and the gi pattern will be stored for it
+            place_split = place[0].split('&')
+            if place_split[0]+'&'+place_split[1] in places['PAÍS'] or place_split[0]+'&'+place_split[1] in places['ESTADO'] or place_split[0]+'&'+place_split[1] in places['CIDADE']:
+                gr_places_found.append(place_split[0])
+                gi_places_found.append(place_split[1])
+                gi_pattern.append(place_split[0]+'&'+place_split[1])
+
+        return gr_places_found, gi_places_found, gi_pattern
+
+    def split_phrase(self, phrase,pattern):
+        """splits phrases by place, divinding one sentence into multiple sentences with one place in each.
+        If the sentence has only one place, it will return a list with only the original sentence.
+
+        Args:
+            phrase (string): The phrase that will be splitted
+            pattern (list of strings): List with the places that will be used to split the sentence
+
+        Returns:
+            list of strings: Returns the list with each each part of the sentence that has a place in it
+        """
+        phrases = list()
+
+        for i in pattern:
+            new_phrase = phrase.split(i, 1)
+            try:
+                phrase = new_phrase[1]
+                phrases.append(new_phrase[0] + i)
+            except:
+                phrase = new_phrase[0]
+                phrases.append(new_phrase[0])
+
+        return phrases
 
     def __del__(self):
         if self._fd:

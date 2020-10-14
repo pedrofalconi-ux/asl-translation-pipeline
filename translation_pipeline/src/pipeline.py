@@ -4,6 +4,7 @@ import logging
 from artifact import rename_temporary_artifact_directory, empty_temporary_artifact_directory
 import element_stub
 from elements import *
+from globalstore import add_to_store
 
 logger = logging.getLogger(__name__)
 
@@ -132,6 +133,10 @@ class Pipeline():
                 del element.instance
             except Exception as ex:
                 logger.error('Failed to destruct "{}": {}'.format(element.name, ex))
+
+    def set_progress_callback_fn(self, fn):
+        '''Sets the global progress callback function.'''
+        add_to_store('progress_callback_fn', fn)
 
     def process(self):
         '''Starts the pipeline processing.'''

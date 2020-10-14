@@ -11,7 +11,7 @@ from artifact import get_artifact_directory_by_hash
 logger = logging.getLogger(__name__)
 imported_as_module = __name__ == '__main__'
 
-def execute(pipeline_expression, execution_comment):
+def execute(pipeline_expression, execution_comment, progress_callback_fn=None):
     '''Instantiates and executes a pipeline from the given `pipeline_expression`
     then saves execution information to the log, alongside `execution_comment`.
     '''
@@ -26,6 +26,9 @@ def execute(pipeline_expression, execution_comment):
     pl = pipeline.Pipeline()
     pl.parse_pipeline_json(pipeline_expression)
     pl.instantiate_elements()
+    if progress_callback_fn:
+        pl.set_progress_callback_fn(progress_callback_fn)
+
     artifact_hash = pl.process()
     pl.destruct_elements()
 

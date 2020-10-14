@@ -33,7 +33,13 @@ def translation_routine(enumerated_data_tuple, tr_instance=None, always_use_tqdm
             data_iterator = enumerate(data)
 
         # actually translate rows
-        for i, line in data_iterator:
+        for j, line in data_iterator:
+            # execute progress callback, if it exists (but only in one of the threads)
+            if always_use_tqdm or i == 0:
+                progress_callback_fn = fetch_from_store('progress_callback_fn')
+                if progress_callback_fn:
+                    progress_callback_fn({ 'name': 'translate', 'progress': j / len(data) })
+
             if not line or len(line) < 2:
                 logger.warn(f'Missing GR/GI, skipping...\nProblematic line: {line}')
                 continue

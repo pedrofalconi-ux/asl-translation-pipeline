@@ -3,6 +3,7 @@ import logging
 
 from artifact import update_hash
 import cache
+from globalstore import fetch_from_store
 import registry
 
 logger = logging.getLogger(__name__)
@@ -28,6 +29,11 @@ class ElementStub():
         '''
         logger.debug(f'Passing data to element {self.name}...')
         self.has_processed = True
+
+        # Execute progress callback, if it exists
+        progress_callback_fn = fetch_from_store('progress_callback_fn')
+        if progress_callback_fn:
+            progress_callback_fn({ 'name': self.name, 'progress': None })
 
         # Calculate current cache key, which is based on this element's plus the
         # previous' element's cache key, since this output also depends on the

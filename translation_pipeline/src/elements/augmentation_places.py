@@ -7,6 +7,7 @@ from itertools import product
 from artifact import get_artifact_directory
 from elements.element import PipelineElement
 from registry import register_element
+from utils import resolve_relative_path
 
 valid_chars = "A-ZÁÉÍÓÚÀÂÊÔÃÕÜÇa-záéíóúàâêôãõüç"
 
@@ -27,7 +28,7 @@ class PlacesAugmentation(PipelineElement):
             new_places_total = int(kwargs['total_places']) if 'total_places' in kwargs else 3
             self._new_places_total = new_places_total if new_places_total else None
             self._max_new_sentences = max_new_sentences if max_new_sentences else None
-            self._path = kwargs['path']
+            self._path = resolve_relative_path(kwargs['path'])
             self._fd = open(self._path, 'r')
             self._reader = csv.reader(self._fd)
         except KeyError:

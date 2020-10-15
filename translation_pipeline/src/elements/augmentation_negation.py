@@ -117,13 +117,11 @@ class NegationAugmentation(PipelineElement):
                 if 'NÃO_' == words_found_gi[0][:4] and ('NÃO ' == words_found_gr[0][:4] or 'NÃO_' == words_found_gr[0][:4]):    #if the word is negated then returns the sentence with the non-negated word
                     word_without_negation = words_found_gi[0][4:]
                     new_aug = (re.sub(r'\b' + words_found_gr[0] + r'\b', word_without_negation, line[0]), re.sub(r'\b' + words_found_gi[0] + r'\b', word_without_negation, line[1]))
-                    if len(re.findall('NÃO_[{REGEX_LATIN}_]+', new_aug[1])) >= 1:   #only insert into to the list if there are negated words in the sentence
-                        lista.append(new_aug)
+                    lista.append(new_aug)    #inserts the augmented sentence into the list
 
                 elif 'NÃO_' != words_found_gi[0][:4] and 'NÃO ' != words_found_gr[0][:4] and 'NÃO_' != words_found_gr[0][:4]:    #if the word is non-negated then returns the sentence with the negated word
                     new_aug = (re.sub(r'(\b' + words_found_gr[0] + r'\b)', r'NÃO \1', line[0]), re.sub(r'(\b' + words_found_gi[0] + r'\b)', r'NÃO_\1', line[1]))
-                    if len(re.findall('NÃO_[{REGEX_LATIN}_]+', new_aug[1])) >= 1:   #only insert into to the list if there are negated words in the sentence
-                        lista.append(new_aug)
+                    lista.append(new_aug)    #inserts the augmented sentence into the list
 
 
             #if more than one word was found then it returns all possible combinations of these words in the sentence (negated or not negated)
@@ -192,8 +190,7 @@ class NegationAugmentation(PipelineElement):
                         sentence_gi = re.sub(re_words_gi[i], word_gi, sentence_gi)    #makes the right replacement for which word in "gi"
                         i += 1
 
-                    if len(re.findall('NÃO_[{REGEX_LATIN}_]+', sentence_gi)) >= 1:   #only insert into to the list if there are negated words in the sentence
-                        lista.append((sentence_gr, sentence_gi))    #inserts the augmented sentence into the list
+                    lista.append((sentence_gr, sentence_gi))    #inserts the augmented sentence into the list
 
         return lista    #returns the list, whether empty (no augmentation possible) or with the augmentations
 

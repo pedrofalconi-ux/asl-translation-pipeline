@@ -62,7 +62,6 @@ class PlacesAugmentation(PipelineElement):
                 aug_data.append(aug_phrase)
 
         random.shuffle(aug_data)
-        pattern = rf'[A-ZÁÉÍÓÚÀÂÊÔÃÕÜÇa-záéíóúàâêôãõüç_]+(?=&ESTADO|&PAÍS|&CIDADE)'
         
         data = data + list(aug_data)    # concatenates the original data with the augmented data (turned into a list)
         return data          
@@ -130,7 +129,7 @@ class PlacesAugmentation(PipelineElement):
             if not places_gr == places_gi:
                 print(f'\nGR: {gr}\nplaces found in GR: {places_gr}\n\nGI: {gi}\nplaces found in GI: {places_gi}')
 
-    def row_search(self, gr,gi,places):
+    def row_search(self, gr, gi, places):
         """Searches the sentence for the places that are given in the `lugares.csv` file
         and stores them in lists.
 
@@ -150,14 +149,17 @@ class PlacesAugmentation(PipelineElement):
 
         gi_pattern = []         #stores the patterns that will be used to replace the places in the 'gi'
 
-        for place in re.findall(pattern,gi):  # for each place found the place itself, the type of place and the gi pattern will be stored for it
-            place_split = place[0].split('&')
-            if place_split[0]+'&'+place_split[1] in places['PAÍS'] \
-                or place_split[0]+'&'+place_split[1] in places['ESTADO'] \
-                or place_split[0]+'&'+place_split[1] in places['CIDADE']:
-                gr_places_found.append(place_split[0])
-                gi_places_found.append(place_split[1])
-                gi_pattern.append(place_split[0]+'&'+place_split[1])
+        all_places = places['PAÍS'] + places['ESTADO'] + places['CIDADE']   # concatenates all places in a single list
+        
+        for place in all_places:    # for each place in list of places, checks if it's in the both the gr and gi of the sentence in equal amounts
+            place_without_denominator, place_denominator = place.split('&')
+            
+            place_in_gr = re.findall(r'\b' + place_without_denominator + r'\b', gr)
+            place_in_gi = re.findall(r'\b' + place + r'\b', gi)
+            if len(place_in_gi) > 0 and len(place_in_gr) == len(place_in_gi):
+                gr_places_found.append(place_without_denominator)
+                gi_places_found.append(place_denominator)
+                gi_pattern.append(place)
 
         return gr_places_found, gi_places_found, gi_pattern
 

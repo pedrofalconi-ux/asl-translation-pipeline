@@ -66,6 +66,7 @@ def translation_routine(enumerated_data_tuple, tr_instance=None, always_use_tqdm
 class TranslationElement(PipelineElement):
     '''Translates a list of (PT, GI) tuples to (GR, GI) tuples.'''
     name = 'translate'
+    version = 2
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -113,7 +114,7 @@ class TranslationElement(PipelineElement):
         # unfortunately, using fork() causes vlibras-translate to spit out empty
         # translations and I don't have the time to look into that right now.
         with multiprocessing.get_context('spawn').Pool(os.cpu_count()) as pool:
-            for translated_slice in pool.imap_unordered(translation_routine, _enumerated_slice_generator()):
+            for translated_slice in pool.imap(translation_routine, _enumerated_slice_generator()):
                 output += translated_slice
 
         return output

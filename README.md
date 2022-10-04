@@ -54,6 +54,13 @@ This git repository uses submodules. As such, either manually initialize them yo
 
 Installation can be done by running `pip install . -e` from this directory to install as an editable pip package.
 
+This project requires git-lfs to work properly when cloned. Ensure that git lfs is installed before you proceed.
+
+```bash
+$ apt-get -qq install build-essential git git-lfs
+$ git lfs install
+```
+
 ### Usage
 #### Programatically
 Import the `execute` function from `cli.py` and use it as follows:

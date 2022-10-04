@@ -6,7 +6,7 @@ from shutil import copy2
 from artifact import get_artifact_directory
 from elements.element import PipelineElement
 from registry import register_element
-from utils import resolve_relative_path
+from utils import get_file_md5_hash, resolve_relative_path
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +35,10 @@ class TrainElement(PipelineElement):
             logger.info(f"Using train parameters: {parameters_dict}")
 
         return parameters_dict
+
+    def get_cache_key(self):
+        """Generate a new artifact when hyperparams have been changed."""
+        return get_file_md5_hash(self._train_parameters_path)
 
     def process(self, data=None):
         # Set up paths and folders.

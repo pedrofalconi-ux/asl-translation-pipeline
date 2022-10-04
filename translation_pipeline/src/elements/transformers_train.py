@@ -37,6 +37,7 @@ class TransformersElement(PipelineElement):
         return parameters_dict
 
     def get_cache_key(self):
+        """Generate a new artifact when hyperparams have been changed."""
         return get_file_md5_hash(self._train_parameters_path)
 
     def process(self, data=None):

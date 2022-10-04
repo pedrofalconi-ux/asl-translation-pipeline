@@ -34,6 +34,11 @@ This repository contains the implementation of a generic data processing pipelin
     # or, if you don't want to install `virtualenv`:
     $ python3 -m venv venv && source venv/bin/activate
     ```
+  - Or use conda to create the environment needed (we recommend this method)
+    ```bash
+    $ conda create -n pipeline python=3.8
+    $ conda activate pipeline
+    ```
   - Install the required dependencies:
     ```bash
     $ pip install -r requirements.txt

@@ -30,6 +30,7 @@ class SplitElement(PipelineElement):
 
         self._shuffle = "shuffle" in kwargs
         self._duplicate = "duplicate" in kwargs
+        self._transformers = "transformers" in kwargs
 
     def process(self, data):
         val_line_count = round(len(data) * self._val_percentage)
@@ -37,10 +38,31 @@ class SplitElement(PipelineElement):
         if self._shuffle:
             random.shuffle(data)
 
-        if self._duplicate:
-            return {"train": data, "valid": data}
+        if self._transformers:
+            if self._duplicate:
+                train_tuples = [
+                    {"translation": {"pt": row[0], "gi": row[1]}} for row in data
+                ]
+                val_tuples = [
+                    {"translation": {"pt": row[0], "gi": row[1]}} for row in data
+                ]
+            else:
+                train_tuples = [
+                    {"translation": {"pt": row[0], "gi": row[1]}}
+                    for row in data[:-val_line_count]
+                ]
+                val_tuples = [
+                    {"translation": {"pt": row[0], "gi": row[1]}}
+                    for row in data[-val_line_count:]
+                ]
         else:
-            return {"train": data[:-val_line_count], "valid": data[-val_line_count:]}
+            if self._duplicate:
+                train_tuples = data
+                val_tuples = data
+            else:
+                train_tuples = data[:-val_line_count]
+                val_tuples = data[-val_line_count:]
+        return {"train": train_tuples, "valid": val_tuples}
 
 
 # Add element to the registry.

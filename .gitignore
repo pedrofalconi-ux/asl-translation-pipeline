@@ -8,3 +8,4 @@ scripts
 tmp
 translation_pipeline/data/corpus
 execution_log.csv
+mlruns

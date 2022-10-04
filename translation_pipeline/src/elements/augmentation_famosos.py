@@ -1,7 +1,7 @@
-import os
-import re
 import csv
+import os
 import random
+import re
 from itertools import permutations
 
 from artifact import get_artifact_directory
@@ -9,10 +9,11 @@ from elements.element import PipelineElement
 from registry import register_element
 from utils import resolve_relative_path
 
+
 class FamososAugmentation(PipelineElement):
-    '''Data augmentation for famosos
-    '''
-    name = 'famosos_augmentation'
+    """Data augmentation for famosos"""
+
+    name = "famosos_augmentation"
 
     _fd = None
     _reader = None
@@ -21,14 +22,17 @@ class FamososAugmentation(PipelineElement):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         try:
-            max_new_sentences = int(kwargs['max_new_sentences']) if 'max_new_sentences' in kwargs else 0
+            max_new_sentences = (
+                int(kwargs["max_new_sentences"]) if "max_new_sentences" in kwargs else 0
+            )
             self._max_new_sentences = max_new_sentences if max_new_sentences else None
-            self._path = resolve_relative_path(kwargs['path'])
-            self._fd = open(self._path, 'r')
+            self._path = resolve_relative_path(kwargs["path"])
+            self._fd = open(self._path, "r")
             self._reader = csv.reader(self._fd)
         except KeyError:
             raise ValueError(
-                '`famosos_augmentation` requires `path` and `max_new_sentences` parameter.')
+                "`famosos_augmentation` requires `path` and `max_new_sentences` parameter."
+            )
 
     def process(self, data):
         list_famosos = list()
@@ -45,15 +49,17 @@ class FamososAugmentation(PipelineElement):
     def generate(self, corpus_sample, list_famosos):
         data = set()
         # mascaramento para evitar substituicoes erradas
-        wrapper = lambda name: name[:1] + '<mark>' + name[1:]
-        unrwrapper = lambda name: name.replace('<mark>', '')
+        wrapper = lambda name: name[:1] + "<mark>" + name[1:]
+        unrwrapper = lambda name: name.replace("<mark>", "")
 
         for row_gr, row_gi in corpus_sample:
             # procura por nomes na linha tual baseada na lista de famosos `list_famosos`
             literals = self.row_search(row_gr, row_gi, list_famosos)
             if literals:
                 # limita o numero de possibilidades caso exista mais de 3 lugares na mesma frase
-                literals = literals if len(literals) <= 3 else random.sample(literals, 3)
+                literals = (
+                    literals if len(literals) <= 3 else random.sample(literals, 3)
+                )
                 # verifica todas as opcoes possiveis de substituicao baseada na quantidade de literais encontrados
                 # e.g SERGIO MORO CONVERSOU COM JAIR BOLSONARO
                 # Temos 2 possibilidades de alteracoes `SERGIO MORO` e `JAIR BOLSONARO`
@@ -65,7 +71,7 @@ class FamososAugmentation(PipelineElement):
                 perm = list(permutations(list_famosos, len(literals)))
                 random.shuffle(perm)
                 # Pegamos apenas uma amostra do total geral (caso _max_new_sentences for 0 todas as sentencas serao retornadas)
-                sample = perm[:self._max_new_sentences]
+                sample = perm[: self._max_new_sentences]
                 for _tuple in sample:
                     gr, gi = row_gr, row_gi
                     # Substitui os literais encontrados na linha pelos famosos que estao na lista
@@ -87,7 +93,9 @@ class FamososAugmentation(PipelineElement):
             # len(gr) = 1 e len(gi) = 1
             # e.g. SERGIO MORO SAIU, JAIR_BOLSONARO&FAMOSO SAIR
             # len(gr) = 1 e len(gi) = 0
-            if len(re.findall(item_gr, row_gr)) >= 1 and len(re.findall(item_gr, row_gr)) == len(re.findall(item_gi, row_gi)):
+            if len(re.findall(item_gr, row_gr)) >= 1 and len(
+                re.findall(item_gr, row_gr)
+            ) == len(re.findall(item_gi, row_gi)):
                 _list.add((item_gr, item_gi))
         return _list
 

@@ -1,15 +1,19 @@
 import json
 import logging
 
-from artifact import rename_temporary_artifact_directory, empty_temporary_artifact_directory
 import element_stub
+from artifact import (
+    empty_temporary_artifact_directory,
+    rename_temporary_artifact_directory,
+)
 from elements import *
 from globalstore import add_to_store
 
 logger = logging.getLogger(__name__)
 
-class Pipeline():
-    '''Constructed by the CLI interface.'''
+
+class Pipeline:
+    """Constructed by the CLI interface."""
 
     def __init__(self):
         # Holds the pipeline elements (for calling constructors/destructors).
@@ -22,10 +26,10 @@ class Pipeline():
         self._elements_pending_connection = []
 
     def _parse_element_expression(self, element_expression):
-        '''Parses an element expression string and returns a tuple containing
+        """Parses an element expression string and returns a tuple containing
         the element's name and a `params` dictionary.
-        '''
-        first_space = element_expression.find(' ')
+        """
+        first_space = element_expression.find(" ")
 
         # User-friendly element name. Used to fetch from registry.
         if first_space == -1:
@@ -35,14 +39,14 @@ class Pipeline():
 
         # User-friendly element parameters list. For example:
         # ['src=Input File.txt', 'enable_masking']
-        element_parameters_as_str = element_expression[first_space + 1:].split(',')
+        element_parameters_as_str = element_expression[first_space + 1 :].split(",")
 
         # Dictionary version of the parameter list described above.
         element_parameters_dict = {}
 
         # Parse parameters string into parameter dictionary.
         for element_parameter_as_str in element_parameters_as_str:
-            key_val_tuple = element_parameter_as_str.split('=')
+            key_val_tuple = element_parameter_as_str.split("=")
             if len(key_val_tuple) == 2:
                 # Is a key-value tuple, assign both.
                 element_parameters_dict[key_val_tuple[0]] = key_val_tuple[1]
@@ -53,10 +57,10 @@ class Pipeline():
         return (element_name, element_parameters_dict)
 
     def _parse_element_stack(self, element_stack):
-        '''Parses a list of element expression strings and dicts, returns the
+        """Parses a list of element expression strings and dicts, returns the
         last element. In the case of a dictionary, this method will be called
         recursively with the values of each key in the dictionary.
-        '''
+        """
         # The element stub that was created last. Will be used for connecting
         # the current's stub output to the previous stub's output.
         prev_element = None
@@ -71,10 +75,12 @@ class Pipeline():
                 # Recursive call. Iterate through the keys and build their
                 # branches.
                 for output_name, inner_stack in popped_element.items():
-                    self._elements_pending_connection.append({
-                        'output_name': output_name,
-                        'element_instance': self._parse_element_stack(inner_stack)
-                    })
+                    self._elements_pending_connection.append(
+                        {
+                            "output_name": output_name,
+                            "element_instance": self._parse_element_stack(inner_stack),
+                        }
+                    )
 
                 # Done doing the recursive calls for all the keys, now we can
                 # connect the outputs to the next element we see.
@@ -89,8 +95,8 @@ class Pipeline():
                     for element_pending_connection in self._elements_pending_connection:
                         # ...connect them to this element.
                         element.output[
-                            element_pending_connection['output_name']
-                        ] = element_pending_connection['element_instance']
+                            element_pending_connection["output_name"]
+                        ] = element_pending_connection["element_instance"]
 
                     # Done. Clear all pending connections.
                     self._elements_pending_connection = []
@@ -109,10 +115,10 @@ class Pipeline():
         self._starting_element = self._parse_element_stack(element_stack)
 
     def instantiate_elements(self):
-        '''Calls the constructor with the desired parameters for each element
+        """Calls the constructor with the desired parameters for each element
         in the pipeline.
-        '''
-        logger.info('Instantiating pipeline elements...')
+        """
+        logger.info("Instantiating pipeline elements...")
         empty_temporary_artifact_directory()
 
         for element in self._pipeline:
@@ -124,8 +130,8 @@ class Pipeline():
                 raise ex
 
     def destruct_elements(self):
-        '''Calls the destructor for each element in the pipeline.'''
-        logger.info('Destructing pipeline...')
+        """Calls the destructor for each element in the pipeline."""
+        logger.info("Destructing pipeline...")
 
         for element in self._pipeline:
             try:
@@ -135,12 +141,12 @@ class Pipeline():
                 logger.error('Failed to destruct "{}": {}'.format(element.name, ex))
 
     def set_progress_callback_fn(self, fn):
-        '''Sets the global progress callback function.'''
-        add_to_store('progress_callback_fn', fn)
+        """Sets the global progress callback function."""
+        add_to_store("progress_callback_fn", fn)
 
     def process(self):
-        '''Starts the pipeline processing.'''
-        logger.info('Starting pipeline processing...')
+        """Starts the pipeline processing."""
+        logger.info("Starting pipeline processing...")
         self._starting_element.process_and_pass_along()
 
         # Take care of any leftover elements.

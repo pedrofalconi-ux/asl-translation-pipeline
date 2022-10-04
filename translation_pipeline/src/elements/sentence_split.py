@@ -1,27 +1,28 @@
 from elements.element import PipelineElement
 from registry import register_element
 
+
 class SentenceSplitElement(PipelineElement):
-    '''Splits paragraphs into different sentences.'''
-    name = 'sentence_split'
+    """Splits paragraphs into different sentences."""
+
+    name = "sentence_split"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         # Whether to discard sentences if they can't be evenly split. If this
         # flag is not set, the original un-split sentences will be kept.
-        self._discard_uneven_splits = 'discard_uneven_splits' in kwargs
+        self._discard_uneven_splits = "discard_uneven_splits" in kwargs
 
         # Whether to duplicate split sentences. That is, append both the split
         # sentences and the original sentence to the output.
-        self._duplicate = 'duplicate' in kwargs
-
+        self._duplicate = "duplicate" in kwargs
 
     def _split_sentences(self, sentences, sep):
-        '''For each sentence in `sentences`, separate it by `sep`, and concatenate
+        """For each sentence in `sentences`, separate it by `sep`, and concatenate
         `sep` back into the string whenever necessary to maintain the original
         sentence as it was originally.
-        '''
+        """
         output = []
         for sentence in sentences:
             split = sentence.split(sep)
@@ -30,12 +31,11 @@ class SentenceSplitElement(PipelineElement):
                     continue
 
                 if i < len(split) - 1:
-                    output.append(f'{split_sentence.strip()} {sep}')
+                    output.append(f"{split_sentence.strip()} {sep}")
                 else:
-                    output.append(f'{split_sentence.strip()}')
+                    output.append(f"{split_sentence.strip()}")
 
         return output
-
 
     def process(self, data):
         output = []
@@ -44,7 +44,7 @@ class SentenceSplitElement(PipelineElement):
             gr_splitted = [gr]
             gi_splitted = [gi]
 
-            for separator in ['[PONTO]', '[INTERROGAÇÃO]', '[EXCLAMAÇÃO]']:
+            for separator in ["[PONTO]", "[INTERROGAÇÃO]", "[EXCLAMAÇÃO]"]:
                 gr_splitted = self._split_sentences(gr_splitted, separator)
                 gi_splitted = self._split_sentences(gi_splitted, separator)
 
@@ -63,6 +63,7 @@ class SentenceSplitElement(PipelineElement):
                     output.append((gr, gi))
 
         return output
+
 
 # Add element to the registry.
 register_element(SentenceSplitElement)

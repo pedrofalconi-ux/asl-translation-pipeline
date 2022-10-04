@@ -9,36 +9,41 @@ from registry import register_element
 logger = logging.getLogger(__name__)
 
 # should be used inside a regex dictionary. note the `-`.`
-REGEX_LATIN = 'A-ZÁÉÍÓÚÀÂÊÔÃÕÜÇa-záéíóúàâêôãõüç'
+REGEX_LATIN = "A-ZÁÉÍÓÚÀÂÊÔÃÕÜÇa-záéíóúàâêôãõüç"
+
 
 class CounterElement(PipelineElement):
-    '''Takes a list of (GR, GI) tuples, counts special cases and writes out to a
+    """Takes a list of (GR, GI) tuples, counts special cases and writes out to a
     CSV file.
-    '''
+    """
+
     # NOTE: expects directionality in VERB_1S_1S format, itensifiers afterwards
     # and "&" used as context marker.
-    name = 'counter'
+    name = "counter"
     dont_use_cache = True
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        if 'filename' not in kwargs:
-            raise ValueError(f'`{self.name}` requires a `filename` parameter.')
+        if "filename" not in kwargs:
+            raise ValueError(f"`{self.name}` requires a `filename` parameter.")
 
-        self._filename = kwargs['filename']
+        self._filename = kwargs["filename"]
 
         self._special_cases = [
-            ('Direcionalidade', rf'[{REGEX_LATIN}_]+_[123][SP]_[123][SP]'),
-            ('Intensidade', rf'[{REGEX_LATIN}_]+\([-+]\)'),
-            ('Negação', rf'NÃO_[{REGEX_LATIN}_]+'),
-            ('Famosos', rf'[{REGEX_LATIN}_]+&FAMOS(A|O)'),
-            ('Lugares', rf'[{REGEX_LATIN}_]+&(CIDADE|ESTADO|PAÍS)'),
-            ('Romanos', rf'^(?=[MDCLXVI])M*(C[MD]|D?C*)(X[CL]|L?X*)(I[XV]|V?I*)$'),
-            ('Ordinais', rf'[1-9][ºª]'),
-            ('Cardinais', rf'[0-9](?![SPºª0-9])'),
-            ('Contexto', rf'(?<!NÃO)(?<![1-3][SP])[_|&](?!\w*PAÍS|\w*ESTADO|\w*CIDADE|\w*[1-3][SP]|\w*[&|_]*FAMOSO)'),
-            ('Básico', None)
+            ("Direcionalidade", rf"[{REGEX_LATIN}_]+_[123][SP]_[123][SP]"),
+            ("Intensidade", rf"[{REGEX_LATIN}_]+\([-+]\)"),
+            ("Negação", rf"NÃO_[{REGEX_LATIN}_]+"),
+            ("Famosos", rf"[{REGEX_LATIN}_]+&FAMOS(A|O)"),
+            ("Lugares", rf"[{REGEX_LATIN}_]+&(CIDADE|ESTADO|PAÍS)"),
+            ("Romanos", rf"^(?=[MDCLXVI])M*(C[MD]|D?C*)(X[CL]|L?X*)(I[XV]|V?I*)$"),
+            ("Ordinais", rf"[1-9][ºª]"),
+            ("Cardinais", rf"[0-9](?![SPºª0-9])"),
+            (
+                "Contexto",
+                rf"(?<!NÃO)(?<![1-3][SP])[_|&](?!\w*PAÍS|\w*ESTADO|\w*CIDADE|\w*[1-3][SP]|\w*[&|_]*FAMOSO)",
+            ),
+            ("Básico", None),
         ]
 
     def process(self, data):
@@ -59,21 +64,22 @@ class CounterElement(PipelineElement):
             # didn't match any of the special cases, count as regular sentence
             if not gi_has_matched:
                 try:
-                    counts['Básico'] += 1
+                    counts["Básico"] += 1
                 except KeyError:
-                    counts['Básico'] = 1
+                    counts["Básico"] = 1
 
         # write to file
         filepath = os.path.join(get_artifact_directory(), self._filename)
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
-        with open(filepath, 'w') as fd:
-            fd.write('Caso,Ocorrências\n')
+        with open(filepath, "w") as fd:
+            fd.write("Caso,Ocorrências\n")
             for case_name, case_count in counts.items():
-                fd.write(f'{case_name},{case_count}\n')
+                fd.write(f"{case_name},{case_count}\n")
 
         # forward output
         return data
+
 
 # Add element to the registry.
 register_element(CounterElement)

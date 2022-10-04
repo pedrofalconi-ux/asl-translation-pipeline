@@ -6,53 +6,70 @@ from elements.element import PipelineElement
 from registry import register_element
 from utils import add_submodule_to_sys_path, resolve_relative_path
 
+
 class ResultsElement(PipelineElement):
-    '''Output CSV file with test results.'''
-    name = 'results'
+    """Output CSV file with test results."""
+
+    name = "results"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         try:
             # Original test corpus, for extracting the PT-BR column
-            self._corpus_path = resolve_relative_path(kwargs['corpus_file'])
+            self._corpus_path = resolve_relative_path(kwargs["corpus_file"])
 
-            self._gr_path = os.path.join(get_artifact_directory(), 'Preprocessed/test.gr')
-            self._gi_path = os.path.join(get_artifact_directory(), 'Preprocessed/test.gi')
-            self._gi_model_path = os.path.join(get_artifact_directory(), 'test.h')
+            self._gr_path = os.path.join(
+                get_artifact_directory(), "Preprocessed/test.gr"
+            )
+            self._gi_path = os.path.join(
+                get_artifact_directory(), "Preprocessed/test.gi"
+            )
+            self._gi_model_path = os.path.join(get_artifact_directory(), "test.h")
 
-            self._results_csv_path = os.path.join(get_artifact_directory(), 'Test Results.csv')
+            self._results_csv_path = os.path.join(
+                get_artifact_directory(), "Test Results.csv"
+            )
         except KeyError:
-            raise ValueError('`results` requires a `corpus_file` parameter.')
+            raise ValueError("`results` requires a `corpus_file` parameter.")
 
         from strsimpy.levenshtein import Levenshtein
+
         self._levenshtein = Levenshtein()
 
-        add_submodule_to_sys_path('vlibras-translate')
+        add_submodule_to_sys_path("vlibras-translate")
         from vlibras_translate import postprocessing
-        self._postprocessor = postprocessing.Postprocessor()
 
+        self._postprocessor = postprocessing.Postprocessor()
 
     def _calculate_scores(self, gi_model, gi_gold):
         return (100 - self._levenshtein.distance(gi_model, gi_gold)) / 100
 
-
     def process(self, data=None):
-        with open(self._corpus_path, 'r', newline='') as test_corpus_file, \
-            open(self._gr_path, 'r') as gr_file, \
-            open(self._gi_path, 'r') as gi_file, \
-            open(self._gi_model_path, 'r') as gi_model_file, \
-            open(self._results_csv_path, 'w') as results_csv_file:
+        with open(self._corpus_path, "r", newline="") as test_corpus_file, open(
+            self._gr_path, "r"
+        ) as gr_file, open(self._gi_path, "r") as gi_file, open(
+            self._gi_model_path, "r"
+        ) as gi_model_file, open(
+            self._results_csv_path, "w"
+        ) as results_csv_file:
             test_corpus_reader = csv.reader(test_corpus_file)
             csv_writer = csv.writer(results_csv_file)
             csv_writer.writerow(
-                ['PT', 'GR', 'GI (Padrão Ouro)', 'GI (Gerado pela rede)', 'Score', 'Resultado']
+                [
+                    "PT",
+                    "GR",
+                    "GI (Padrão Ouro)",
+                    "GI (Gerado pela rede)",
+                    "Score",
+                    "Resultado",
+                ]
             )
 
             result_count = {
-                'OK': 0,
-                'Parcial': 0,
-                'Incorreto': 0,
+                "OK": 0,
+                "Parcial": 0,
+                "Incorreto": 0,
             }
             total_results = 0
 
@@ -63,34 +80,39 @@ class ResultsElement(PipelineElement):
                 except StopIteration:
                     row = None
 
-                pt = row[0] if row and len(row) > 0 else '-'
+                pt = row[0] if row and len(row) > 0 else "-"
                 gr = gr_file.readline().strip()
 
-                if pt == '-' and not gr:
+                if pt == "-" and not gr:
                     break
 
                 gi_gold = self._postprocessor.postprocess(gi_file.readline().strip())
-                gi_model = self._postprocessor.postprocess(gi_model_file.readline().strip())
+                gi_model = self._postprocessor.postprocess(
+                    gi_model_file.readline().strip()
+                )
 
                 score = self._calculate_scores(gi_model, gi_gold)
                 if score == 1:
-                    result = 'OK'
+                    result = "OK"
                 elif score > 0.85:
-                    result = 'Parcial'
+                    result = "Parcial"
                 else:
-                    result = 'Incorreto'
+                    result = "Incorreto"
                 result_count[result] += 1
                 total_results += 1
 
-                csv_writer.writerow([
-                    pt, gr, gi_gold, gi_model,
-                    f'{round(score * 100, 2)}%',
-                    result
-                ])
+                csv_writer.writerow(
+                    [pt, gr, gi_gold, gi_model, f"{round(score * 100, 2)}%", result]
+                )
 
-            csv_writer.writerow([''])
+            csv_writer.writerow([""])
             for result in result_count:
-                csv_writer.writerow([f'{result}: {round(100 * result_count[result] / total_results, 2)}%'])
+                csv_writer.writerow(
+                    [
+                        f"{result}: {round(100 * result_count[result] / total_results, 2)}%"
+                    ]
+                )
+
 
 # Add element to the registry.
 register_element(ResultsElement)

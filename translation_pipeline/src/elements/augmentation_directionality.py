@@ -1,15 +1,16 @@
-import re
 import random
-
-# Pipeline
-from registry import register_element
-from elements.element import PipelineElement
-
-# This class will inherit from PipelineElement class
+import re
 
 # itertools — Functions creating iterators for efficient looping
 # The module standardizes a core set of fast, memory efficient tools that are useful by themselves or in combination.
-from itertools import product, combinations
+from itertools import combinations, product
+
+from elements.element import PipelineElement
+
+# Pipeline
+from registry import register_element
+
+# This class will inherit from PipelineElement class
 
 
 class Directionality_Augmentation(PipelineElement):
@@ -58,6 +59,7 @@ class Directionality_Augmentation(PipelineElement):
         _pronoun_pattern,
         _verb_pattern,
     )
+
     def __init__(self, *args, **kwargs):
         """
         Keyword Arguments:
@@ -65,7 +67,9 @@ class Directionality_Augmentation(PipelineElement):
                             each (gr, gi)] (default: {0})
         """
         super().__init__(*args, **kwargs)
-        max_new_sentences = int(kwargs['max_new_sentences']) if 'max_new_sentences' in kwargs else 0
+        max_new_sentences = (
+            int(kwargs["max_new_sentences"]) if "max_new_sentences" in kwargs else 0
+        )
         self._max_new_sentences = max_new_sentences if max_new_sentences else None
 
     #! Métodos necessários para o step de augmentation
@@ -97,7 +101,7 @@ class Directionality_Augmentation(PipelineElement):
 
     def new_patterns(self, pattern_gr, verb_gi, **kwargs):
         """creates new phrases from the following patterns
-       [pronome reto, verbo, pronome reto] ou [pronome reto, pronome obliquo atono, verbo]"""
+        [pronome reto, verbo, pronome reto] ou [pronome reto, pronome obliquo atono, verbo]"""
         patterns_gr = []
         patterns_gi = []
 
@@ -150,8 +154,8 @@ class Directionality_Augmentation(PipelineElement):
 
     def for_string(*args, **kwargs):
         """Transforms a pattern ([pronome reto -> verbo -> pronome reto]
-            or [pronome reto -> pronome obliquo -> verbo])
-            in a string to search for what comes before and after """
+        or [pronome reto -> pronome obliquo -> verbo])
+        in a string to search for what comes before and after"""
 
         if kwargs.get("search_pattern"):
             search_pattern = kwargs.get("search_pattern")
@@ -224,12 +228,18 @@ class Directionality_Augmentation(PipelineElement):
         gi_verbs = re.findall(self._gi_verb_pattern, gr_gi_tuple[1])
         # * [pronome reto -> verbo -> pronome reto]
         # [pronome reto -> pronome obliquo -> verbo]
-        if search_pattern_agent_verb and search_pattern_gi and len(search_pattern_agent_verb) == len(search_pattern_gi):
+        if (
+            search_pattern_agent_verb
+            and search_pattern_gi
+            and len(search_pattern_agent_verb) == len(search_pattern_gi)
+        ):
             # Creates new phrases for each pattern
             # [pronome reto -> pronome obliquo -> verbo]
             for i, patterns_gi in enumerate(search_pattern_gi):
                 try:
-                    gr, gi = self.new_patterns(search_pattern_agent_verb[i], gi_verbs[i])
+                    gr, gi = self.new_patterns(
+                        search_pattern_agent_verb[i], gi_verbs[i]
+                    )
                 except IndexError:
                     continue
 
@@ -269,11 +279,12 @@ class Directionality_Augmentation(PipelineElement):
         for phrase in data:
             augmentation_phrases = list(self.augmentation(phrase))
             random.shuffle(augmentation_phrases)
-            new_phrases.extend(augmentation_phrases[:self._max_new_sentences])
+            new_phrases.extend(augmentation_phrases[: self._max_new_sentences])
 
         random.shuffle(new_phrases)
-        #new_phrases = new_phrases[:self._max_new_sentences]
+        # new_phrases = new_phrases[:self._max_new_sentences]
         data = data + new_phrases
         return data
+
 
 register_element(Directionality_Augmentation)

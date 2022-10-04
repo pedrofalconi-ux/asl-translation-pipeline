@@ -26,6 +26,17 @@ This repository contains the implementation of a generic data processing pipelin
   - For `learn_bpe`: `subword-nmt` available in `$PATH`.
   - For `binarize`, `train` and `interactive_score`: `fairseq` installed via pip and its commands available in `$PATH`.
 
+### Development
+During development, it is also useful to run code-style and linting tools before commiting and/or creating a merge request:
+- Install dev dependencies:
+  ```bash
+  $ pip install -r requirements-dev.txt
+  ```
+- Run linter and formatting on all source files:
+  ```bash
+  $ pre-commit run --all-files
+  ```
+
 ### Cloning and Installation
 This git repository uses submodules. As such, either manually initialize them yourself after cloning or pass `--recurse-submodules` to the `git clone` call.
 

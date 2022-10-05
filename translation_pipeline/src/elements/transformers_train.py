@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import subprocess
 from shutil import copy2
 
 from artifact import get_artifact_directory
@@ -12,9 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class TransformersElement(PipelineElement):
-    """Train Fairseq Step
-    Cria a pasta de checkpoint e executa o fairseq train com os parâmetros de treino.
-    """
+    """Train Transformers Step"""
 
     name = "transformers-trainer"
     dont_use_cache = True
@@ -27,6 +26,11 @@ class TransformersElement(PipelineElement):
             self._train_parameters_path = resolve_relative_path(kwargs["parameters"])
         except KeyError:
             raise ValueError(f"`{self.name}` requires a `parameters` parameter.")
+
+        try:
+            self._trainer = resolve_relative_path(kwargs["trainer"])
+        except KeyError:
+            raise ValueError(f"`{self.name}` requires a `trainer` parameter.")
 
     def _read_parameters_json(self, json_file_path):
         """Reads the train configuration file."""
@@ -53,15 +57,18 @@ class TransformersElement(PipelineElement):
         train_file_path = os.path.join(splits_folder, "train.json")
         valid_file_path = os.path.join(splits_folder, "valid.json")
 
-        str_parameters = f"train --output_dir {checkpoint_folder} --train_file {train_file_path} --validation_file {valid_file_path}"
+        str_parameters = f"--output_dir {checkpoint_folder} \
+            --train_file {train_file_path} --validation_file {valid_file_path}"
+
         for key, value in parameters_dict[0].items():
             str_parameters += f" {key} {value}"
 
-        # Run Fairseq training
+        # Run Transformers training
         logger.debug(f"Running: {str_parameters}")
 
-        if os.system(str_parameters):
-            raise Exception("Error running transformers training")
+        cmd = [self._trainer] + str_parameters.split()
+
+        subprocess.run(cmd, check=True)
 
 
 # Add element to the registry.

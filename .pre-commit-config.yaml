@@ -17,6 +17,12 @@ repos:
     - id: check-ast
     - id: check-merge-conflict
     - id: end-of-file-fixer
+    - id: detect-private-key
+    - id: requirements-txt-fixer
+    - id: check-added-large-files
+      args: [
+        '--maxkb=1000'
+      ]
 -   repo: https://gitlab.com/pycqa/flake8
     rev: 3.9.2
     hooks:

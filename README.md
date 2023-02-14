@@ -1,3 +1,14 @@
+<div align="center">
+  <a href="https://www.vlibras.gov.br/">
+    <img
+      alt="VLibras"
+      src="https://www.librasol.com.br/wp-content/uploads/2015/04/avatar.png"
+       height="304"
+       width="187"
+    />
+  </a>
+</div>
+
 # translation-pipeline
 
 ![Licença](https://img.shields.io/badge/license-LGPLv3-blue.svg)

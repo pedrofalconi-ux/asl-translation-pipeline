@@ -100,9 +100,13 @@ class ApplyBpeElement(PipelineElement):
                 # Run apply bpe on set_corp files
                 logger.debug(f"Running apply_bpe.py on {file_to_apply_bpe_on}")
 
-                if os.system(
-                    f"subword-nmt apply-bpe -c {self._bpe_code} < {file_to_apply_bpe_on} > {output_file}"
-                ):
+                bpe_command = f"subword-nmt apply-bpe -c {self._bpe_code}"
+
+                if lang == "gr" and set_corp == "train":
+                    bpe_command += " --glossaries '<BT>'"
+                bpe_command += f" < {file_to_apply_bpe_on} > {output_file}"
+
+                if os.system(bpe_command):
                     raise Exception("Error running subword-nmt")
 
 

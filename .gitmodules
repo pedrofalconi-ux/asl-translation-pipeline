@@ -1,3 +1,3 @@
 [submodule "submodules/vlibras-translate"]
 	path = translation_pipeline/submodules/vlibras-translate
-	url = https://gitlab.lavid.ufpb.br/vlibras2019/vlibras-library/vlibras-translate
+	url = git@gitlab.lavid.ufpb.br:vlibras2019/vlibras-library/vlibras-translate.git

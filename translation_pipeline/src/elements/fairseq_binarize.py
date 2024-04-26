@@ -39,7 +39,7 @@ class BinarizeElement(PipelineElement):
             )
             return
 
-        fairseq_preprocess_cmd = f'fairseq-preprocess -s gr -t gi --trainpref "{self._train_pref}" --validpref "{self._valid_pref}" --destdir "{self._dest_dir}"'
+        fairseq_preprocess_cmd = f'fairseq-preprocess -s gr -t gi --trainpref "{self._train_pref}" --validpref "{self._valid_pref}" --destdir "{self._dest_dir}" --joined-dictionary'
         logger.debug(f"Running: {fairseq_preprocess_cmd}")
 
         if os.system(fairseq_preprocess_cmd):

@@ -1,0 +1,26 @@
+[
+    "gitsrc commit=COMMIT_HASH",
+    "translate",
+    "cleanup",
+    "preprocess spell_out_numbers,replace_directionality_syntax",
+    "split shuffle,val_percentage=.3",
+    {
+        "train": [
+            "counter filename=Analysis/Counts (before augmentation).csv",
+            "intensidade_augmentation path=data/augmentation/intensificaveis.csv,max_new_sentences=30",
+            "directionality_augmentation max_new_sentences=30",
+            "place_augmentation path=data/augmentation/lugares.csv,max_new_sentences=30",
+            "negation_augmentation path=data/augmentation/negacao.csv,max_new_sentences=30",
+            "famosos_augmentation path=data/augmentation/famosos.csv,max_new_sentences=30",
+            "counter filename=Analysis/Counts (after augmentation).csv",
+            "parallel_filedest gr_path=Preprocessed/train.gr,gi_path=Preprocessed/train.gi"
+        ],
+        "valid": [
+            "parallel_filedest gr_path=Preprocessed/valid.gr,gi_path=Preprocessed/valid.gi"
+        ]
+    },
+    "learn_bpe bpe_tokens=4000",
+    "apply_bpe",
+    "binarize",
+    "train parameters=data/fairseq-params/train_parameters_default.json"
+]

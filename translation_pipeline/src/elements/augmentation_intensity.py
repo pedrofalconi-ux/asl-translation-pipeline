@@ -136,19 +136,22 @@ class IntensidadeAugmentation(PipelineElement):
         augmented_phrases = []
         wrong_sentences = []
         for gr, gi in data:
+            try:
+                if re.search(r"\([+-]+\)", gi):
+                    replaced_gr, replaced_gi = self._remove_intensifiers(gr, gi)
 
-            if re.search(r"\([+-]+\)", gi):
-                replaced_gr, replaced_gi = self._remove_intensifiers(gr, gi)
-
-                if len(re.findall(self._intensifiers_sub, replaced_gr)) == len(
-                    re.findall(self._intensifiers_sub, replaced_gi)
-                ):
-                    augmented_phrases.extend(self._augment(replaced_gr, replaced_gi))
-                elif (
-                    len(re.findall(self._intensifiers_sub, replaced_gi)) >= 1
-                    or len(re.findall(self._intensifiers_sub, replaced_gr)) >= 1
-                ):
-                    wrong_sentences.append((gr, gi))
+                    if len(re.findall(self._intensifiers_sub, replaced_gr)) == len(
+                        re.findall(self._intensifiers_sub, replaced_gi)
+                    ):
+                        augmented_phrases.extend(self._augment(replaced_gr, replaced_gi))
+                    elif (
+                        len(re.findall(self._intensifiers_sub, replaced_gi)) >= 1
+                        or len(re.findall(self._intensifiers_sub, replaced_gr)) >= 1
+                    ):
+                        wrong_sentences.append((gr, gi))
+            except:
+                logger.error("Could not augment tuple, skipping...")
+                continue
 
         random.shuffle(augmented_phrases)
         data.extend(augmented_phrases)

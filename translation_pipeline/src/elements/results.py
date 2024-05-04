@@ -1,5 +1,6 @@
 import csv
 import os
+import datasets
 
 from artifact import get_artifact_directory
 from elements.element import PipelineElement
@@ -35,6 +36,9 @@ class ResultsElement(PipelineElement):
 
         from strsimpy.levenshtein import Levenshtein
 
+        self._sacrebleu = datasets.load_metric("sacrebleu")
+        self._meteor = datasets.load_metric("meteor")
+
         self._levenshtein = Levenshtein()
 
         add_submodule_to_sys_path("vlibras-translate")
@@ -46,6 +50,9 @@ class ResultsElement(PipelineElement):
         return (100 - self._levenshtein.distance(gi_model, gi_gold)) / 100
 
     def process(self, data=None):
+        predictions = []
+        references = []
+
         with open(self._corpus_path, "r", newline="") as test_corpus_file, open(
             self._gr_path, "r"
         ) as gr_file, open(self._gi_path, "r") as gi_file, open(
@@ -91,6 +98,9 @@ class ResultsElement(PipelineElement):
                     gi_model_file.readline().strip()
                 )
 
+                predictions.append(gi_model)
+                references.append(gi_gold)
+
                 score = self._calculate_scores(gi_model, gi_gold)
                 if score == 1:
                     result = "OK"
@@ -112,6 +122,24 @@ class ResultsElement(PipelineElement):
                         f"{result}: {round(100 * result_count[result] / total_results, 2)}%"
                     ]
                 )
+            
+            predictions = [p.split() for p in predictions]
+            references = [[r.split()] for r in references]
+
+            sacrebleu_output = self._sacrebleu.compute(
+                predictions=predictions, references=references
+            )
+            meteor_output = self._meteor.compute(
+                predictions=predictions, references=references
+            )
+
+            eval_metrics = {
+                "sacrebleu": round(sacrebleu_output["score"], 3),
+                "meteor": round(meteor_output["meteor"], 3),
+            }
+            csv_writer.writerow([""])
+            for metric in eval_metrics:
+                csv_writer.writerow([f"{metric}: {eval_metrics[metric]}"])
 
 
 # Add element to the registry.

@@ -70,7 +70,7 @@ Installation can be done by running `pip install . -e` from this directory to in
 This project requires git-lfs to work properly when cloned. Ensure that git lfs is installed before you proceed.
 
 ```bash
-$ apt-get -qq install build-essential git git-lfs
+$ apt-get -qq install build-essential git git-lfs rhash default-jre libhunspell-dev
 $ git lfs install
 ```
 

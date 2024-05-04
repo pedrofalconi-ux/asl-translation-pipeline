@@ -86,7 +86,7 @@ class PreprocessElement(PipelineElement):
         split_sentence = [[x, ""] for x in sentence.split()]
         split_sentence = self._number.to_extenso(split_sentence)
 
-        return " ".join([x[0] for x in split_sentence])
+        return " ".join([x[0] for x in split_sentence]).upper()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

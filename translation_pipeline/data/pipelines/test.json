@@ -2,7 +2,7 @@
     "csvsrc path=CORPUS_PATH",
     "translate",
     "cleanup",
-    "preprocess move_intensifiers_to_the_right,replace_context_markers,replace_directionality_syntax,spell_out_numbers,homonyms_csv_path=data/augmentation/homonimos.csv",
+    "preprocess replace_context_markers,move_intensifiers_to_the_right,spell_out_numbers,homonyms_csv_path=data/augmentation/homonimos.csv",
     "parallel_filedest gr_path=Preprocessed/test.gr,gi_path=Preprocessed/test.gi",
     "apply_bpe train_hash=TRAIN_HASH",
     "interactive_score train_hash=TRAIN_HASH,parameters=data/fairseq-params/test_parameters_default.json",

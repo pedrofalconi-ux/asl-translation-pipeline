@@ -2,7 +2,7 @@
     "gitsrc commit=COMMIT_HASH",
     "translate",
     "cleanup",
-    "preprocess spell_out_numbers,replace_directionality_syntax",
+    "preprocess replace_context_markers,move_intensifiers_to_the_right,spell_out_numbers,homonyms_csv_path=data/augmentation/homonimos.csv",
     "split shuffle,val_percentage=.3",
     {
         "train": [

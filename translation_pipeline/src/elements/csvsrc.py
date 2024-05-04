@@ -1,9 +1,10 @@
 import csv
-
+import logging
 from elements.element import PipelineElement
 from registry import register_element
 from utils import get_file_md5_hash, resolve_relative_path
 
+logger = logging.getLogger(__name__)
 
 class CsvSrcElement(PipelineElement):
     """Reads from a `.csv` file."""
@@ -38,6 +39,7 @@ class CsvSrcElement(PipelineElement):
                 if row:
                     data.append(row[:2])
 
+        logger.info(f'Found {len(data)} valid entries in corpus.')
         return data
 
 

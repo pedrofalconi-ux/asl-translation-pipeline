@@ -88,6 +88,52 @@ class PreprocessElement(PipelineElement):
 
         return " ".join([x[0] for x in split_sentence]).upper()
 
+    def _big_number_to_word(self, number):
+        number = int(number)
+        
+        if number < 1000:
+            return str(number)
+
+        suffixes = {
+            1000000000000: 'TRILHÃO',
+            1000000000: 'BILHÃO',
+            1000000: 'MILHÃO',
+            1000: 'MIL'
+        }
+
+        if number in suffixes:
+            return suffixes.get(number)
+
+        for suffix, word in sorted(suffixes.items(), reverse=True):
+            if number >= suffix:
+                integer = number // suffix
+                rest = number % suffix
+                if rest == 0:
+                    return f'{integer} {word}'
+        return number
+
+    def _parse_every_spelled_number(self, text):
+        PATTERN = re.compile(
+            r'\d+\s+VÍRGULA\s\d+?\s*(?:MIL(?:HÃO|HÕES)?|BILH(?:ÃO|ÕES)?|TRILHÕES)?'
+        )
+
+        matches = []
+        def repl(match):
+            matches.append(match.group(0))
+            return '@'
+
+        masked_text = re.sub(PATTERN, repl, text)
+        parsed_text = self._number.parse_every_spelled_num(masked_text)
+
+        for m in matches:
+            parsed_text = parsed_text.replace('@', m, 1)
+
+        def convert(match):
+            return self._big_number_to_word(int(match.group(0)))
+
+        parsed_text=re.sub(r'(\b\d0+\b)', convert, parsed_text)
+        return parsed_text
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -121,6 +167,15 @@ class PreprocessElement(PipelineElement):
 
         if "replace_directionality_syntax" in kwargs:
             self._methods.append(self._replace_directionality_syntax)
+
+        if "parse_every_spelled_number" in kwargs:
+            self._methods.append(self._parse_every_spelled_number)
+            
+            add_submodule_to_sys_path("vlibras-translate")
+            import vlibras_translate
+
+            self._number = vlibras_translate.number.Number(cardinal=False)
+
 
     def process(self, data):
         output = []

@@ -1,6 +1,6 @@
 import csv
 import os
-import datasets
+import evaluate
 
 from artifact import get_artifact_directory
 from elements.element import PipelineElement
@@ -36,8 +36,8 @@ class ResultsElement(PipelineElement):
 
         from strsimpy.levenshtein import Levenshtein
 
-        self._sacrebleu = datasets.load_metric("sacrebleu")
-        self._meteor = datasets.load_metric("meteor")
+        self._sacrebleu = evaluate.load("sacrebleu")
+        self._meteor = evaluate.load('meteor')
 
         self._levenshtein = Levenshtein()
 

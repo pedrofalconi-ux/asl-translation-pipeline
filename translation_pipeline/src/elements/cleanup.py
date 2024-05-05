@@ -66,6 +66,16 @@ class CleanupElement(PipelineElement):
 
         return sentence
 
+    def _standardize_punctuation(self, gr, gi):
+        puncts = ['[PONTO]', '[INTERROGAÇÃO]', '[EXCLAMAÇÃO]']
+        tokens_gr = gr.split()
+        tokens_gi = gi.split()
+        if tokens_gr[-1] in puncts and tokens_gi[-1] not in puncts:
+            tokens_gi.append(tokens_gr[-1])
+        if tokens_gr[-1] not in puncts and tokens_gi[-1] in puncts:
+            tokens_gi.pop()
+        return " ".join(tokens_gr).strip(), " ".join(tokens_gi).strip()
+
     def _remove_futuro_passado(self, gr, gi):
         def _check_line(rule, interp):
             rule_fp = ("FUTURO" in rule) or ("PASSADO" in rule)
@@ -109,6 +119,7 @@ class CleanupElement(PipelineElement):
 
             if gr and gi:
                 gr, gi = self._remove_futuro_passado(gr, gi)
+                gr, gi = self._standardize_punctuation(gr, gi)
                 output.append((gr, gi))
 
         return output

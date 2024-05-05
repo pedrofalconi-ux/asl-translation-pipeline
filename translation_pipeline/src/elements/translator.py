@@ -22,9 +22,9 @@ def translation_routine(enumerated_data_tuple, tr_instance=None, always_use_tqdm
     try:
         # import vlibras-translate and instantiate, if running in a separate process
         if not tr_instance:
-            import vlibras_translate
+            import vlibras_translator
 
-            tr_instance = vlibras_translate.translation.Translation()
+            tr_instance = vlibras_translator.translate.Translator()
 
         # if running multiprocess, tqdm should only be used in one of them to
         # avoid messing up the stdout
@@ -51,7 +51,7 @@ def translation_routine(enumerated_data_tuple, tr_instance=None, always_use_tqdm
 
             pt = line[0]
             gi = line[1]
-            gr = tr_instance.rule_translation(pt)
+            gr = tr_instance.translate(pt, neural=False)
             if not gr or not gi:
                 logger.warning(
                     f"Missing GR/GI after translating, skipping...\nProblematic line: {line}"
@@ -71,11 +71,11 @@ def translation_routine(enumerated_data_tuple, tr_instance=None, always_use_tqdm
         raise ex
 
 
-class TranslationElement(PipelineElement):
+class TranslatorElement(PipelineElement):
     """Translates a list of (PT, GI) tuples to (GR, GI) tuples."""
 
-    name = "translate"
-    version = 2
+    name = "translator"
+    version = 1
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -84,22 +84,11 @@ class TranslationElement(PipelineElement):
         self._multiprocess = "disable-multiprocessing" not in kwargs
 
         # Check for vlibras-translate.
-        self._tr = fetch_from_store("vlibras-translation-instance")
+        self._tr = fetch_from_store("vlibras-translator-instance")
         if not self._tr:
-            # Module wasn't loaded. Import it and save to the global store.
-            add_submodule_to_sys_path("vlibras-translate")
-
-            from vlibras_translate import translation
-
-            self._tr = translation.Translation()
-
-            add_to_store("vlibras-translation-instance", self._tr)
-
-    def get_cache_key(self):
-        # Given the same input data, the output should only change if when the
-        # version of the `vlibras-translate` submodule changes. We account for
-        # this by using the git HEAD commit hash as the cache key.
-        return get_git_revision_hash(cwd=get_submodule_path("vlibras-translate"))
+            from vlibras_translator import translate
+            self._tr = translate.Translator()
+            add_to_store("vlibras-translator-instance", self._tr)
 
     def _single_process_translation(self, data):
         """Translate the (PT, GI) tuples in `data` using a single process."""
@@ -141,4 +130,4 @@ class TranslationElement(PipelineElement):
 
 
 # Add element to the registry.
-register_element(TranslationElement)
+register_element(TranslatorElement)

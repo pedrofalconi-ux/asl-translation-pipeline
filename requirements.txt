@@ -4,3 +4,4 @@ subword-nmt==0.3.8
 tqdm==4.54.0
 transformers==4.21.2
 datasets==2.11.0
+nlpaug==1.1.11

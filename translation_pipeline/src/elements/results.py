@@ -123,8 +123,8 @@ class ResultsElement(PipelineElement):
                     ]
                 )
             
-            predictions = [p.split() for p in predictions]
-            references = [[r.split()] for r in references]
+            predictions = [p for p in predictions]
+            references = [[r] for r in references]
 
             sacrebleu_output = self._sacrebleu.compute(
                 predictions=predictions, references=references

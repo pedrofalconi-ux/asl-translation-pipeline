@@ -1,0 +1,99 @@
+CAMINHADA E ORGANIZACAO DA WORKSPACE (EN -> ASL(gloss) / Fairseq LightConv)
+Data: 2026-03-15
+
+1) ESTADO ATUAL (o que esta valendo AGORA)
+- Treino atual (rodando):
+  - Dataset binarizado (fairseq): data-bin/asl_100k_canon_enonly_clean
+  - Checkpoints (fora da workspace, no D:):
+    D:\translation-pipeline-checkpoints\lightconv_asl_100k_canon_enonly_clean_invSqrt
+  - Log do treino atual:
+    logs/train_lightconv_asl_100k_canon_enonly_clean.log
+
+- Como acompanhar o log (PowerShell):
+  Get-Content -Tail 80 -Wait .\logs\train_lightconv_asl_100k_canon_enonly_clean.log
+
+- Corpus RAW final (para inspecao, em TXT):
+  - EN (source):  asl_pipeline/data/raw/subset_100k.filtered.en.enonly.clean.txt
+  - ASL (target): asl_pipeline/data/raw/subset_100k.filtered.asl.enonly.clean.txt
+  Observacao: estes RAW sao EN-only + mojibake-fix. A canonicalizacao do ASL acontece na etapa de preparo.
+
+- Dataset preparado (splits antes do SentencePiece e antes da binarizacao):
+  data/asl_100k_canon_enonly_clean/
+  (contém train.en/train.asl, valid.*, test.* e versoes tokenizadas .sp.*)
+
+2) O QUE FOI FEITO (caminhada resumida)
+- Pipeline base (Windows): preparar dados, treinar SentencePiece (BPE), binarizar com fairseq-preprocess e treinar modelo LightConv (fairseq).
+
+- Problema 1 (ASL target): muitos marcadores/pontuacao estruturada (ex.: PRO-3(he), wh-q(where), parenteses/hifens) dominavam tokenizacao/decoder.
+  - Solucao: canonicalizacao robusta no target ASL (ex.: PRO-3(he) -> PRO_3_he; wh-q(x) -> WHQ_x) + limpeza de aspas e ';'.
+
+- Problema 2 (source EN): mistura de frases em outros idiomas (DA/DE/SV/NO etc.).
+  - Solucao: filtro por idioma no paralelismo mantendo alinhamento (keep-only English) usando lingua-language-detector e threshold de confianca.
+
+- Problema 3 (source EN): mojibake (ex.: Â, Ã, â€...).
+  - Solucao: heuristicas de repair (roundtrip cp1252/latin1 -> utf-8), stitch de sequencias quebradas por espacos e tratamento de controles C1.
+
+- Configuracao do treino atual:
+  - SentencePiece BPE (separado): --sp-separate (um modelo para EN e outro para ASL)
+  - Dicionarios separados no fairseq-preprocess: --separate-dictionary
+  - Treino: arch lightconv_iwslt_de_en, label smoothing, inverse_sqrt + warmup, dropout e weight decay.
+
+3) PASTAS/ARQUIVOS IMPORTANTES (o que serve para que)
+- asl_pipeline/scripts/asl_prepare.py
+  Faz: split train/valid/test, normalizacao, canonicalizacao do ASL (opcional), treina/aplica SentencePiece e roda fairseq-preprocess.
+
+- asl_pipeline/scripts/filter_parallel_by_lang.py
+  Faz: filtra o corpus paralelo para EN-only mantendo alinhamento e corrige mojibake.
+
+- data/asl_100k_canon_enonly_clean/
+  Faz: dataset preparado (splits + arquivos tokenizados .sp.*) usado como entrada para fairseq-preprocess.
+
+- data-bin/asl_100k_canon_enonly_clean/
+  Faz: dataset binarizado (bin/idx + dict.*) usado diretamente no treino fairseq.
+
+- fairseq_compat_run.py
+  Faz: wrapper para rodar comandos fairseq no Windows/ambiente atual.
+
+- logs/train_lightconv_asl_100k_canon_enonly_clean.log
+  Faz: log do treino atual (acompanhar progresso, loss, checkpoints etc.).
+
+4) ORGANIZACAO DA WORKSPACE (SEM AFETAR O TREINO ATUAL)
+Foi criada a pasta:
+  "surgiu durante o processo/"
+para arquivar artefatos antigos/intermediarios que nao vamos usar no treino atual.
+
+Conteudo arquivado (com nomes mais descritivos):
+- surgiu durante o processo/raw/
+  - variantes antigas do subset_100k (original/langclean/enonly-pre-clean), para referencia.
+
+- surgiu durante o processo/data/
+  - datasets preparados antigos (ex.: langclean antigo, baselines e subsets pequenos).
+
+- surgiu durante o processo/data-bin/
+  - binarizacoes antigas (ex.: data-bin/asl_100k baseline, canon antigo, langclean antigo).
+
+- surgiu durante o processo/logs/
+  - logs de treinos antigos renomeados pelo dataset (ex.: data-bin/asl_100k).
+
+- surgiu durante o processo/checkpoints/
+  - checkpoints antigos que estavam dentro da workspace (na pasta checkpoints/).
+
+- surgiu durante o processo/quality_reports/
+  - relatorios/inputs de qualidade gerados durante o processo.
+
+5) REGRAS DE SEGURANCA (para nao quebrar o treino atual)
+- NAO mover/renomear:
+  - data-bin/asl_100k_canon_enonly_clean
+  - logs/train_lightconv_asl_100k_canon_enonly_clean.log
+  - D:\translation-pipeline-checkpoints\lightconv_asl_100k_canon_enonly_clean_invSqrt
+
+6) ORGANIZACAO DOS CHECKPOINTS NO DISCO D: (SEM AFETAR O TREINO ATUAL)
+- Pasta de checkpoints ativa (mantida no lugar):
+  D:\translation-pipeline-checkpoints\lightconv_asl_100k_canon_enonly_clean_invSqrt
+
+- Checkpoints antigos foram arquivados em:
+  D:\translation-pipeline-checkpoints\surgiu durante o processo\
+
+  (inclui runs antigos como lightconv_100k_e15, langclean, smoke, etc.)
+
+Fim.

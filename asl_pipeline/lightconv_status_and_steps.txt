@@ -1,0 +1,136 @@
+LightConv — status no repositório e passos para treinar (resumo)
+
+Resumo rápido
+- No repositório há referências ao LightConv e à integração com Fairseq:
+  - `translation_pipeline/data/fairseq-params/train_parameters_default.json` usa `"--arch": "lightconv_iwslt_de_en"`.
+  - `requirements.txt` lista `fairseq==0.12.2`.
+  - Existem elementos de pipeline para Fairseq: `translation_pipeline/src/elements/fairseq_binarize.py`, `fairseq_train.py` e `fairseq_interactive.py`.
+- Conclusão: o código do projeto já espera usar Fairseq e tem parâmetros preparados para arquiteturas LightConv. Porém, a disponibilidade do próprio "lightconv" depende da instalação do Fairseq no seu ambiente (e da versão instalada).
+
+O que verificar localmente (para saber se "lightconv" está disponível no seu ambiente)
+1) Verificar se o Python tem o fairseq instalado e a versão:
+
+```bash
+python -c "import importlib; 
+try:
+  m = importlib.import_module('fairseq');
+  print('fairseq version:', getattr(m, '__version__', 'unknown'))
+except Exception as e:
+  print('fairseq not importable:', e)
+"
+```
+
+2) Teste rápido para ver se `fairseq-train` está disponível no PATH:
+
+```bash
+which fairseq-train || command -v fairseq-train || echo 'fairseq-train not found in PATH'
+```
+
+3) Tentar executar ajuda/checar arquitetura (tentativa segura):
+
+```bash
+fairseq-train --help | head -n 50
+# ou tentar: fairseq-train data-bin/asl --arch lightconv_iwslt_de_en --help
+```
+
+Se o binary `fairseq-train` não estiver disponível, provavelmente você precisa instalar fairseq no ambiente Python ativo.
+
+O que falta (prováveis itens) antes de treinar com LightConv
+- Instalar PyTorch compatível com sua GPU/CUDA (ou CPU-only se não tiver GPU). Siga as instruções em https://pytorch.org/get-started/locally/ para escolher o comando correto (muito importante para compatibilidade/FP16).
+- Instalar Fairseq (a versão do repo recomenda `fairseq==0.12.2` no `requirements.txt`). Em geral:
+  - pip install fairseq==0.12.2
+  - Mas prefira instalar PyTorch primeiro (com a opção CUDA certa), depois instalar fairseq.
+- Ter o dataset preparado no formato paralelo (train.en / train.asl / valid.en / valid.asl / test.*) e tokenizado (BPE / SentencePiece) ou usar o script `asl_pipeline/scripts/asl_prepare.py` para preparar e (opcionalmente) invocar `fairseq-preprocess`.
+- Em sistemas macOS sem GPU NVIDIA, treinar com GPU local pode não ser possível; você pode treinar em CPU (muito lento) ou usar Colab / máquinas com GPU.
+
+Instalação sugerida (passos)
+1) Criar e ativar um ambiente virtual (venv) ou conda (exemplo venv, zsh):
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+```
+
+2) Instalar PyTorch (escolha a linha certa em https://pytorch.org). Exemplo (CPU-only):
+
+```bash
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+```
+
+Exemplo (CUDA 11.7, Linux):
+
+```bash
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu117
+```
+
+3) Instalar dependências do projeto / fairseq:
+
+```bash
+pip install -r requirements.txt
+# se preferir apenas fairseq
+pip install fairseq==0.12.2
+```
+
+Observação: em alguns sistemas (macOS + CPU) instalar fairseq via pip pode falhar por dependências nativas; se isso ocorrer, considere usar Linux (remoto) ou Colab para treino.
+
+Como treinar o LightConv com Fairseq (passos mínimos)
+1) Preparar dados:
+   - Coloque seus arquivos paralelos em (por exemplo) `asl_pipeline/data/raw/` como `all.en` e `all.asl`, ou use dois arquivos separados.
+   - Use o script para split e tokenização (SentencePiece) que já existe:
+
+```bash
+python asl_pipeline/scripts/asl_prepare.py --src-file asl_pipeline/data/raw/all.en --tgt-file asl_pipeline/data/raw/all.asl --outdir data/asl --vocab-size 8000 --seed 42 --run-fairseq-preprocess
+```
+
+Isso criará (por padrão): `data/asl/train.en`, `data/asl/valid.en`, `data/asl/test.en` e as correspondentes em `.asl`, além de arquivos tokenizados `*.sp.*` e — se `--run-fairseq-preprocess` for passado — criará `data-bin/asl`.
+
+2) Treinar com fairseq-train:
+- Exemplo usando a configuração padrão do repositório (a config `translation_pipeline/data/fairseq-params/train_parameters_default.json` já aponta para uma arquitetura LightConv: `lightconv_iwslt_de_en`). Você pode passar parâmetros diretamente no comando ou usar o arquivo de parâmetros do repositório através do elemento `fairseq_train.py`.
+
+Comando exemplo (modo direto):
+
+```bash
+fairseq-train data-bin/asl \
+  --arch lightconv_iwslt_de_en \
+  --share-decoder-input-output-embed \
+  --optimizer adam --lr 0.0007 \
+  --max-epoch 50 \
+  --max-tokens 4096 \
+  --fp16 \
+  --save-dir checkpoints/asl_lightconv
+```
+
+Observações de parâmetros úteis para máquinas modestas:
+- `--max-tokens` (ou `--batch-size`): reduza para poupar VRAM (ex.: 2000–4000).
+- `--update-freq`: use para acumular gradientes (ex.: `--update-freq 2`), útil quando VRAM é pequena.
+- `--fp16`: ativa mixed precision (requer suporte) e reduz uso de memória.
+- Ajuste `--encoder-layers` / `--decoder-layers` para modelos menores (ex.: 2–4 camadas) se for preciso.
+
+3) Inferência / geração
+- Depois do treino, use `fairseq-generate` ou `fairseq-interactive` (há integração no repositório via `translation_pipeline/src/elements/fairseq_interactive.py`):
+
+```bash
+fairseq-generate data-bin/asl --path checkpoints/asl_lightconv/checkpoint_best.pt --batch-size 32 --beam 5 --remove-bpe
+```
+
+Se você usou SentencePiece, pode precisar decodificar as peças com `sentencepiece` antes de avaliar.
+
+Ficará faltando (resumo)
+- Ter o Fairseq e PyTorch instalados corretamente no seu ambiente (versões e compatibilidade CUDA).
+- Colocar seu corpus grande dentro de `asl_pipeline/data/raw/` (ou outro local e apontar `--src-file/--tgt-file`) e rodar `asl_prepare.py`.
+- GPU (opcional mas recomendado) ou usar Colab / servidor remoto caso seu notebook não tenha GPU.
+
+Onde o repositório já ajuda
+- `translation_pipeline/data/fairseq-params/train_parameters_default.json` já contém uma configuração pronta para LightConv.
+- Existem elementos na pasta `translation_pipeline/src/elements/` que implementam `fairseq_preprocess`, `fairseq_train`, e `fairseq_interactive` — você pode usá-los via a CLI/pipeline JSON do projeto para automatizar tudo.
+
+Checagens rápidas que posso fazer por você (se quiser)
+- Gerar um `fairseq-train` comando pronto com parâmetros ajustados para seu hardware (diga sua GPU/VRAM ou diga se só CPU).
+- Criar um pipeline JSON em `data/pipelines/asl_mvp.json` que chame os elementos já existentes e simplifique a execução.
+
+Se quiser seguir, diga:
+- (A) Instalação: quer instruções passo-a-passo para macOS (venv + pip) específicas para seu sistema? Informe se você tem GPU e que modelo.
+- (B) Comando pronto: quer que eu gere um script `asl_pipeline/train_lightconv.sh` com parâmetros ajustados para "notebook médio (6–8 GB VRAM)"?
+- (C) Pipeline JSON: quer que eu crie `translation_pipeline/data/pipelines/asl_mvp.json` que automatize prepare→preprocess→train→generate? 
+

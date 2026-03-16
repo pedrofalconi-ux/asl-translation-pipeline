@@ -1,0 +1,111 @@
+POC: Tradutor English → ASL (glosas) — Passos detalhados
+
+Objetivo
+- Criar uma prova de conceito (POC) simples que traduza sentenças em inglês para glosas ASL (notação de sinais), utilizando a base da translation_pipeline existente (vlibras) como referência, mas implementando uma pipeline mais simples e específica para ASL.
+- Usar o dataset proprietário com 5.000 sentenças como ponto de partida.
+
+Assunções e limitações
+- O dataset contém pares inglês → glosa ASL (ou apenas sentenças em inglês se a glosa precisa ser criada). Assumo que já exista o par (src, trg). Se não existir, será necessário criar as glosas manualmente ou via anotação externa.
+- A pipeline vlibras usa componentes Fairseq / Transformers e muitos elementos específicos; vamos reaproveitar apenas peças reutilizáveis (learn_bpe, fairseq binarize/train/interact) e criar uma versão simplificada.
+- 5.000 sentenças é um dataset pequeno; resultados serão limitados. Estratégias recomendadas: data augmentation, transfer learning (se houver modelo relacionado), ou treinar modelos pequenos (p.ex. lightconv/conv) e avaliar.
+
+Contrato mínimo (entrada/saída)
+- Entrada: arquivo texto com sentenças em inglês (UTF-8), uma sentença por linha.
+- Saída: arquivo texto com glosas ASL correspondentes, uma linha por sentença, mantendo a ordem.
+- Erros: sentenças vazias ou inválidas devem ser ignoradas ou anotadas com um token especial (e.g., <ERR>).
+
+Visão geral da solução (pipeline simplificada)
+1) Preparação de dados
+   - Garantir pares paralelos: dois arquivos plain-text, `train.en` e `train.asl`, com correspondência linha-a-linha.
+   - Split: dividir em treino/val/test (ex.: 80/10/10 → 4000/500/500). Manter seed fixa para reprodutibilidade.
+   - Normalização mínima (aplicada ao inglês): NFKC, remoção de espaços extras, lowercasing opcional (avaliar impacto em ASL), limpeza de caracteres estranhos.
+   - Verificar e limpar linhas vazias e pares desalinhados.
+
+2) Tokenização / Subword (BPE)
+   - Aprender BPE (subword) em conjunto (src+trg) ou separadamente. O repositório já contém `learn_bpe.py` que pode ser reaproveitado.
+   - Escolher tamanho de vocabulário: 8k–16k para dataset pequeno; ajustar conforme resultados.
+   - Aplicar BPE em todos os splits.
+
+3) Formato de dados para treino
+   - Para Fairseq: arquivos pré-processados (binários) via `fairseq-preprocess` ou o equivalente `fairseq_binarize.py` da pipeline.
+   - Para uma pipeline mínima sem Fairseq: manter arquivos paralelos tokenizados e usar um modelo Transformers seq2seq (Hugging Face) com dataset custom Dataset.
+   - Recomendo inicialmente usar os elementos Fairseq já presentes (mais próximo do vlibras) para reduzir esforço.
+
+4) Modelo
+   - Opções:
+     a) LightConv (conv-based) usado pelo vlibras (se houver implementação/params). Vantagem: leve e rápido.
+     b) Transformer pequeno (p.ex. 6-6, d_model=256) via Fairseq/Transformers. Mais padrão e fácil de ajustar.
+   - Dado o repositório contém elementos `fairseq_train.py` e `transformers_train.py`, escolha a rota que preferir; para velocidade, escolher lightconv/fairseq.
+
+5) Treino
+   - Configurar parâmetros básicos: lr=0.0005 (ajustar), batch-size=4096 tokens/it (ou 32 sentences se tokens não suportado), epochs 30 (monitorar), early stopping via validação.
+   - Checkpoints: salvar melhores pelo score BLEU/val loss.
+   - Se possível, usar fine-tuning de um modelo existente (transfer learning). Se não, treinar do zero.
+
+6) Inferência
+   - Usar `fairseq-interactive` ou `fairseq_generate` via `fairseq_interactive.py` para gerar glosas a partir de sentenças tokenizadas.
+   - Pós-processamento: remover BPE markers e ajustar espaçamento/pontuação conforme necessário.
+
+7) Avaliação
+   - Métrica automática: BLEU (útil, mas limitada para glosas). Também registrar perplexity e perda.
+   - Avaliação humana sugerida: avaliar 100–200 exemplos com anotador ASL.
+
+8) Iteração e melhorias rápidas
+   - Data augmentation: inverter ordem, sinônimos, backtranslation (se aplicável), usar os scripts de augmentation já no repositório (p.ex., `augmentation_word.py`, `backtranslation.py`). Testar impacto.
+   - Normalização específica para glosas: ASL glosses frequentemente usam convenções (p.ex., CAPS para sinais, + para composições). Definir convenção e aplicar no pré/pós-processamento.
+
+Passo a passo técnico detalhado (com arquivos e comandos sugeridos)
+1) Preparar o dataset
+   - Colocar arquivos em `data/` ou `data/my_asl/` com `train.en`, `train.asl`, `test.en`, `test.asl`, `valid.en`, `valid.asl`.
+   - Script rápido (Python) para dividir e limpar (remover pares desalinhados).
+
+2) Aprender e aplicar BPE
+   - Usar o script `translation_pipeline/src/elements/learn_bpe.py` ou `subword-nmt`/`sentencepiece`.
+   - Comando (exemplo usando subword-nmt):
+     - learn_bpe: learn joint codes with size=8000
+     - apply_bpe to train/val/test
+
+3) Binarizar (Fairseq)
+   - Usar `translation_pipeline/src/elements/fairseq_binarize.py` que já existe; criar um config JSON em `data/fairseq-params/train_parameters_default.json` (já há arquivos lá: revisar e ajustar).
+
+4) Treinar
+   - Usar `translation_pipeline/src/elements/fairseq_train.py` com o config adequado. Exemplo de parâmetros a verificar/ajustar:
+     - optimizer: adam
+     - lr: 0.0005
+     - clip-norm: 0.0
+     - max-epoch / max-update
+     - save-dir
+
+5) Inferir/testar
+   - Usar `fairseq_interactive.py` ou `transformers_train.py`/`transformers_results.py` para gerar previsões em `test.en`.
+   - Aplicar pós-processamento para remover BPE e limpar texto.
+
+6) Automatizar em pipeline JSON (opcional)
+   - Criar um pipeline simples `data/pipelines/asl_train.json` que descreva os passos: filesrc -> learn_bpe -> apply_bpe -> fairseq_binarize -> fairseq_train.
+   - Criar `data/pipelines/asl_infer.json`: filesrc -> apply_bpe -> fairseq_interactive -> postprocess -> filedest.
+
+7) Validação e litmus tests
+   - Criar 10–20 frases de verificação com traduções esperadas e rodar a pipeline de inferência para comparar visualmente.
+   - Gerar relatório simples com BLEU e 10 exemplos de comparação.
+
+Estratégia de MVP (mínimo viável) em 1 semana
+- Dia 1: preparar dados (split/limpeza). Garantir que os pares existam e estejam no formato correto.
+- Dia 2: aprender/aplicar BPE e preparar arquivos tokenizados.
+- Dia 3: binarizar dados e configurar arquivos de parâmetros (usar defaults do repositório como base).
+- Dias 4–6: treinar um modelo pequeno (monitorar). Se for lento, reduzir epochs ou tamanho do modelo.
+- Dia 7: inferência e relatório inicial (exemplos + BLEU)
+
+Riscos e mitigação
+- Dados pequenos → overfitting/baixa generalização. Mitigar com augmentation e validação rigorosa.
+- Convenções de glossas → inconsistência de anotação. Definir e padronizar glossing antes do treino.
+- Dependências / ambiente (fairseq, torch) → usar virtualenv/conda e `requirements.txt` para garantir reprodutibilidade.
+
+Pequenas melhorias pós-MVP (baixa complexidade)
+- Adicionar pipeline de avaliação humana simples (formulário com 20–50 sentenças).
+- Tentar modelos alternativos (Transformer) para comparar qualidade.
+- Extrair uma API simples (Flask/FastAPI) para testar em interface web.
+
+Notas finais e recomendações
+- Aproveitar os elementos existentes no repositório: `learn_bpe.py`, `fairseq_binarize.py`, `fairseq_train.py`, `fairseq_interactive.py`, `translate.py` e `translator.py` para acelerar a POC.
+- Documentar cada etapa (comandos e parâmetros) num README local para garantir reprodutibilidade.
+- Se quiser, posso gerar os arquivos de pipeline JSON sugeridos e um script Python para dividir e limpar o dataset — diga se quer que eu crie isso como próximo passo.

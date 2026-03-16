@@ -1,11 +1,55 @@
-__pycache__
-*.egg-info
-.vscode
-artifacts
-cache
-logs
-scripts
-tmp
-translation_pipeline/data/corpus
-execution_log.csv
-mlruns
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+
+# Virtual environments
+.venv*/
+venv/
+ENV/
+.python-version
+
+# Packaging
+build/
+dist/
+*.egg-info/
+
+# Test/linters
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# IDE/OS
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
+
+# Project artifacts (generated)
+/artifacts/
+/cache/
+/tmp/
+/logs/
+/results/
+
+# Fairseq/translation artifacts (generated, often large)
+/data/
+/data-bin/
+
+# Raw/filtered corpora (keep only small samples if any)
+asl_pipeline/data/raw/*.txt
+
+# Older archived runs
+/surgiu durante o processo/
+
+# MLflow
+/mlruns/
+
+# Local run logs
+/execution_log.csv
+
+# If you generate corpora here, keep it out of git
+translation_pipeline/data/corpus/

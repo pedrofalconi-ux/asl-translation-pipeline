@@ -1,0 +1,205 @@
+Treinamento no Linux (Ubuntu 24.04) usando GPU AMD (ROCm)
+
+Objetivo
+- Rodar treino do modelo LightConv (fairseq) no Ubuntu 24.04 usando a sua GPU AMD (via ROCm/HIP).
+- Reusar o dataset já preparado no Windows (especialmente data-bin/asl).
+
+Pré-requisitos e observações
+- Hardware: GPU AMD (ex.: RX 7600 / RDNA3). O suporte ROCm para RDNA3 depende bastante da versão do ROCm + kernel + driver.
+- Você vai refazer o ambiente Python no Linux (venv) e instalar PyTorch ROCm + fairseq.
+- Os dados podem ser copiados do Windows para o Linux. Se algo der errado com o data-bin, é normal regenerar o data-bin no Linux.
+
+1) Copiar o projeto e o dataset do Windows para o Linux
+
+Opção A (mais simples): copiar a pasta inteira do projeto.
+- Copie a pasta translation-pipeline para o Linux (via pendrive/SSD, rede, etc.).
+
+Opção B (mínimo necessário): copiar só os artefatos de dados.
+- Copie estas pastas/arquivos para o mesmo lugar no Linux:
+	- data-bin/asl/
+	- data/asl/ (train/valid/test + *.sp.*)
+	- asl_pipeline/data/raw/ (se quiser reprocessar/regerar)
+
+Depois, no Linux, confirme que existem (exemplos):
+- data-bin/asl/dict.en.txt
+- data-bin/asl/dict.asl.txt
+- data-bin/asl/train.en-asl.en.bin e .idx
+- data-bin/asl/train.en-asl.asl.bin e .idx
+
+
+2) Instalar dependências básicas de sistema
+
+No Ubuntu 24.04:
+
+sudo apt update
+sudo apt install -y \
+	build-essential git \
+	python3 python3-venv python3-dev \
+	pkg-config \
+	libsndfile1 \
+	cmake
+
+
+3) Instalar ROCm (driver/stack de GPU)
+
+IMPORTANTE
+- As instruções exatas de instalação do ROCm podem mudar com o tempo.
+- Use a documentação oficial da AMD para Ubuntu 24.04 e para a sua GPU.
+
+Checklist rápido
+- Secure Boot: pode atrapalhar módulos DKMS. Se tiver problemas, considere desabilitar Secure Boot na BIOS/UEFI.
+- Permissões: seu usuário geralmente precisa estar nos grupos de acesso ao device.
+
+Depois de instalar o ROCm, valide no host:
+
+rocminfo
+clinfo
+
+Se esses comandos não existirem, instale os pacotes correspondentes que o guia do ROCm indicar.
+
+Permissões (comum em várias instalações ROCm):
+
+sudo usermod -a -G render,video $USER
+newgrp render
+
+
+4) Criar ambiente Python e instalar PyTorch ROCm
+
+Na raiz do projeto (onde existe data-bin/asl/):
+
+python3 -m venv .venv-rocm
+source .venv-rocm/bin/activate
+
+python -m pip install --upgrade pip setuptools wheel
+
+Instale o PyTorch compatível com ROCm.
+- O índice/URL dos wheels depende da versão do ROCm (ex.: rocm6.0, rocm6.1, etc.).
+- Siga o “Get Started” do PyTorch para ROCm e escolha a variante correspondente.
+
+Exemplo (ajuste o sufixo rocmX.Y conforme o seu ROCm):
+
+python -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocmX.Y
+
+Validação do PyTorch (no ROCm, o backend aparece como torch.cuda mesmo sendo AMD):
+
+python -c "import torch; print('torch', torch.__version__); print('hip', torch.version.hip); print('cuda_is_available', torch.cuda.is_available()); print('device_count', torch.cuda.device_count()); print('device0', torch.cuda.get_device_name(0) if torch.cuda.is_available() else None)"
+
+Se torch.cuda.is_available() == False:
+- Quase sempre é ROCm/driver/versão, não o fairseq.
+- Confira: rocminfo, permissões de grupo, versão do ROCm e o wheel correto do PyTorch.
+
+
+5) Instalar fairseq (LightConv) e dependências
+
+O fairseq 0.12.2 pode precisar compilar extensões. No Linux, isso costuma funcionar bem com build-essential + python3-dev.
+
+Instalação direta do fairseq:
+
+python -m pip install fairseq==0.12.2
+
+Dependências típicas úteis no pipeline:
+
+python -m pip install sentencepiece sacrebleu
+
+Opcional: se você quer reaproveitar as dependências do projeto todo:
+
+python -m pip install -r requirements.txt
+
+(Se der conflito, dá pra manter mínimo só com torch + fairseq + sentencepiece + sacrebleu.)
+
+Verifique:
+
+python -c "import fairseq; print('fairseq', fairseq.__version__)"
+
+
+6) Smoke test (treino curtinho) para validar GPU + pipeline
+
+Crie uma pasta de checkpoints:
+
+mkdir -p checkpoints/lightconv_smoke
+
+Treino de 1 época com batch pequeno (ideal pra confirmar que roda):
+
+python -m fairseq_cli.train data-bin/asl \
+	--task translation \
+	--arch lightconv_iwslt_de_en \
+	--criterion label_smoothed_cross_entropy --label-smoothing 0.1 \
+	--optimizer adam --lr 5e-4 \
+	--max-tokens 1024 \
+	--max-epoch 1 \
+	--save-dir checkpoints/lightconv_smoke \
+	--log-format simple --log-interval 50
+
+Se quiser forçar GPU (quando disponível):
+- Não use --cpu
+- (Opcional) export CUDA_VISIBLE_DEVICES=0 (ROCm também respeita em muitos casos)
+
+
+7) Treino “de verdade” (baseline) – ajuste conforme sua VRAM/tempo
+
+Crie outra pasta:
+
+mkdir -p checkpoints/lightconv_full
+
+Baseline razoável (ajuste max-tokens; aumente aos poucos):
+
+python -m fairseq_cli.train data-bin/asl \
+	--task translation \
+	--arch lightconv_iwslt_de_en \
+	--share-decoder-input-output-embed \
+	--criterion label_smoothed_cross_entropy --label-smoothing 0.1 \
+	--optimizer adam --lr 5e-4 \
+	--lr-scheduler inverse_sqrt --warmup-updates 4000 \
+	--dropout 0.3 --weight-decay 0.0001 \
+	--max-tokens 2048 \
+	--update-freq 1 \
+	--max-epoch 20 \
+	--save-dir checkpoints/lightconv_full \
+	--save-interval 1 \
+	--patience 5 \
+	--log-format simple --log-interval 50
+
+Notas de ajuste
+- Se der OOM: reduza --max-tokens (ex.: 1024 ou 512) e/ou aumente --update-freq.
+- FP16: em ROCm pode funcionar, mas se der instabilidade, remova. (Se quiser tentar: acrescente --fp16.)
+
+
+8) Gerar traduções e avaliar (BLEU)
+
+Após treinar, gere no split test usando o checkpoint:
+
+python -m fairseq_cli.generate data-bin/asl \
+	--path checkpoints/lightconv_full/checkpoint_best.pt \
+	--batch-size 32 \
+	--beam 5 \
+	--remove-bpe \
+	--results-path results/lightconv_full
+
+O fairseq imprime BLEU no output do generate (depende de tokenizer/bpe). Se quiser calcular BLEU fora:
+- Extraia as hipóteses e referências e use sacrebleu.
+
+
+9) Se algo der ruim com o data-bin: regenerar no Linux
+
+Se você copiou os arquivos raw para asl_pipeline/data/raw/:
+
+source .venv-rocm/bin/activate
+python asl_pipeline/scripts/asl_prepare.py --run-fairseq-preprocess --normalize
+
+Isso recria data/asl e data-bin/asl no ambiente Linux.
+
+
+Troubleshooting rápido
+
+GPU não aparece no PyTorch
+- Confirme ROCm instalado: rocminfo
+- Confirme grupos: render/video
+- Confirme que o wheel PyTorch é ROCm (index-url correto) e compatível com sua versão ROCm.
+
+fairseq falha ao instalar/compilar
+- Confirme build-essential + python3-dev
+- Tente: python -m pip install --no-build-isolation fairseq==0.12.2
+
+Treino muito lento
+- Confira se torch.cuda.is_available() é True e se o log do fairseq mostra uso de GPU.
+- Aumente max-tokens aos poucos até o limite da VRAM.

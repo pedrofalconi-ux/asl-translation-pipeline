@@ -1,0 +1,69 @@
+Visão geral da `translation_pipeline` (explicação simples para iniciantes)
+
+Resumo rápido
+- Esta pasta contém uma "pipeline" de tradução: coleções de scripts, elementos e dados que permitem treinar, testar e executar modelos de tradução.
+- A estrutura foi construída para o projeto VLibras (Português → glosas brasileiras), mas é organizada de forma modular: há componentes para ler arquivos, aplicar pré-processamento, treinar com Fairseq/Transformers e salvar resultados.
+
+Estrutura de alto nível (pastas principais)
+- data/
+  - Contém dados de exemplo, parâmetros e pipelines JSON.
+  - Subpastas:
+    - augmentation/: listas e dicionários para técnicas de aumento (ex.: sinônimos, negações, lugares). Útil para gerar mais exemplos sintéticos.
+    - fairseq-params/: configurações padrão para treinar/binarizar modelos Fairseq.
+    - huggingface-params/: configurações para modelos Hugging Face / Transformers.
+    - pipelines/: JSONs que descrevem fluxos (sequence de passos) que a pipeline pode executar (ex.: treinar, testar).
+
+- scripts/
+  - Contém scripts utilitários executáveis, por exemplo `train.py`, que chamam a pipeline com um conjunto de parâmetros.
+
+- src/
+  - Esta é a parte de código que implementa a pipeline. Arquivos principais:
+    - cli.py: interface de linha de comando para executar pipelines/ações.
+    - pipeline.py: objeto/controle que carrega e executa um pipeline (sequência de elementos).
+    - registry.py: registra elementos disponíveis (fontes, transformações, destinos). Permite ligar steps pela configuração JSON.
+    - element_stub.py / element.py: classes base para criar novos elementos da pipeline (por exemplo leitores, transformadores, destinações).
+    - translator.py: wrapper genérico para operações de tradução (inferencia) usando modelos.
+    - artifact.py, cache.py, globalstore.py: utilitários para armazenar artefatos, cachear resultados e compartilhar dados entre elementos da pipeline.
+    - execution_log.py: registra execução e métricas.
+    - utils.py: funções utilitárias menores usadas no projeto.
+  - Pasta `elements/`: contém implementações concretas (cada arquivo é um elemento que pode ser usado numa pipeline JSON). Exemplos importantes:
+    - filesrc.py / filedest.py: ler e escrever arquivos texto.
+    - learn_bpe.py / apply_bpe.py: aprender e aplicar BPE (subword tokenization).
+    - fairseq_binarize.py / fairseq_train.py / fairseq_interactive.py: integração com fairseq para pré-processamento, treino e inferência.
+    - transformers_train.py / transformers_results.py: integração com Hugging Face Transformers.
+    - translate.py: elemento que realiza a tradução propriamente dita (usa `translator.py`).
+    - vários scripts de augmentation (augmentation_*.py): geram novos exemplos a partir de listas em `data/augmentation`.
+
+- submodules/
+  - Dependências incluídas como submódulos git. No seu projeto há `vlibras-translate/`, que contém código da equipe VLibras (mantenha atenção ao licenciamento/licenças).
+
+- tests/
+  - Testes unitários para alguns elementos de augmentation e transformações. Útil para entender exemplos de uso.
+
+Arquivos no nível do projeto
+- README.md: informações de alto nível sobre o projeto.
+- requirements.txt / requirements-dev.txt: dependências Python necessárias para executar e desenvolver.
+- setup.py: permite instalar o pacote localmente com pip (ex.: pip install -e .).
+
+Como as peças se encaixam (visão passo-a-passo simples)
+1) Você define um pipeline em JSON (em `data/pipelines/`) descrevendo os passos: de onde vem os dados (filesrc), quais transformações aplicar (BPE, limpeza), qual elemento treina um modelo (fairseq_train) e para onde salvar os resultados (filedest).
+2) A CLI (`src/cli.py`) carrega esse pipeline e o executa passo-a-passo usando as classes em `src/pipeline.py`.
+3) Cada passo é um "elemento" (classe) implementado em `src/elements/`. Elementos podem ler arquivos, chamar scripts externos (fairseq), processar textos, etc.
+4) Resultados e checkpoints são armazenados como artefatos e logs em diretórios configurados.
+
+Dicas práticas para começar
+- Abra `data/pipelines/train.json` e `test.json` para ver exemplos de pipelines prontos.
+- Rode `python -m translation_pipeline.src.cli --help` (ou abra `src/cli.py`) para ver como executar pipelines.
+- Olhe `src/elements/learn_bpe.py` e `src/elements/fairseq_train.py` para entender como tokenização e treino são feitos.
+- Para um pequeno teste, crie um par `small.en` / `small.asl` com 20 linhas e monte um pipeline simples: filesrc -> apply_bpe -> translate -> filedest.
+
+Terminologia simplificada
+- Elemento: bloco funcional (ler, transformar, treinar, salvar) que você liga com outros em um pipeline.
+- Pipeline JSON: configuração que descreve a sequência de elementos e parâmetros.
+- BPE / tokenização: técnica para quebrar palavras em subunidades (ajuda modelos a lidar com palavras raras).
+- Binarizar: passo específico do Fairseq que transforma texto tokenizado em arquivos otimizados para treino.
+
+Se quiser eu posso:
+- Criar um pipeline JSON mínimo `data/pipelines/asl_mvp.json` que execute os passos essenciais para a POC.
+- Gerar um pequeno script de preparação do dataset (split/clean) e um README com exemplos de comandos para treinar/inferir.
+

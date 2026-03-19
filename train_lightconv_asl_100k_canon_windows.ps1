@@ -67,6 +67,8 @@ if ($LASTEXITCODE -ne 0) {
   throw "Falha ao validar o ambiente (exit=$LASTEXITCODE)"
 }
 
+$resumeCkpt = Join-Path $SaveDir "checkpoint_last.pt"
+
 $cmd = @(
   $compatRunner,
   "train",
@@ -96,11 +98,22 @@ $cmd = @(
   "--log-interval", $LogInterval
 )
 
+if (Test-Path $resumeCkpt) {
+  $cmd += @(
+    "--restore-file", $resumeCkpt
+  )
+}
+
 if ($Cpu) {
   $cmd += "--cpu"
 }
 
-Write-Host "Rodando treino (do zero):"
+if (Test-Path $resumeCkpt) {
+  $ckptInfo = Get-Item $resumeCkpt
+  Write-Host "Retomando treino do checkpoint_last.pt: $($ckptInfo.FullName) (modificado em $($ckptInfo.LastWriteTime))"
+} else {
+  Write-Host "Rodando treino (do zero):"
+}
 Write-Host "  data-bin: $DatasetDir"
 Write-Host "  save-dir: $SaveDir"
 Write-Host "  max-tokens: $MaxTokens, update-freq: $UpdateFreq"

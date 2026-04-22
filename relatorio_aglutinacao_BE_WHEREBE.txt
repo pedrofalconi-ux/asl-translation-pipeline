@@ -1,0 +1,80 @@
+RELATÓRIO — Tokens “aglutinados” com BE / WHERE no output (EN→ASL)
+Data: 2026-03-27
+
+1) Contexto do problema
+Durante a inspeção do arquivo de outputs do modelo (ex.: outputs_60.txt), foram observados tokens colados/aglutinados envolvendo o verbo BE e perguntas com WHERE, como:
+- BEWELCOME, BEHUNGRY, BEFINE, BENOT, BEREADY, BEVERY, etc.
+- WHEREBEBATHROOM, WHEREBEBUS (no output)
+- Outros padrões parecidos: HOWBE, TIMEBE, THATBETOO, TOMORROWBETUESDAY, MUCHBETHIS, TODAYBEM.
+
+A dúvida: isso indica “aprendizado errado” do modelo, ou o próprio corpus ASL contém essas formas coladas?
+
+
+2) Verificação no corpus usado no treinamento
+Foi feita uma comparação direta entre os tokens colados do output e o corpus alvo (ASL) na pasta:
+- data/asl_100k_canon_enonly_clean/{train,valid,test,test_unseen,test_unseen_enonly_ascii_canon}.asl
+
+Resultado principal:
+- Muitos tokens BE* colados aparecem no corpus com frequência relevante. Ou seja, o modelo não está “inventando” todos esses casos; ele está reproduzindo padrões do próprio dataset.
+
+Exemplos de contagens observadas no corpus (forma colada vs. ocorrência da forma separada “BE X”):
+- BENOT: 1268 ocorrências coladas vs 87 ocorrências “BE NOT”
+- BEVERY: 285 coladas vs 80 “BE VERY”
+- BEWELCOME: 17 coladas vs 5 “BE WELCOME”
+- BELOST: 22 coladas vs 13 “BE LOST”
+- HOWBE: 44 coladas vs 3 “HOW BE”
+
+Além disso, o corpus contém uma família grande de tokens do tipo WHEREBE… (ex.: WHEREBELITTLE, WHEREBETHAT, WHEREBEYOUNG, etc.), evidenciando que esse padrão de colagem já existe no dataset.
+
+Observação importante:
+- Alguns tokens vistos no output parecem ser generalizações do padrão e NÃO aparecem literalmente no corpus, por exemplo:
+  - WHEREBEBUS / WHEREBEBATHROOM: não foram encontrados como tokens exatos no corpus.
+  - TOMORROWBETUESDAY: não encontrado.
+  - MUCHBETHIS: não encontrado.
+
+Interpretação: o modelo aprende que “BE cola com vizinhos” e “WHEREBE…” existe, e às vezes produz combinações novas seguindo a mesma lógica, mesmo que a combinação específica não apareça no treino.
+
+
+3) Verificação na fonte original (raw)
+Também foi verificado se esses padrões já vinham “colados” antes de qualquer preparação/tokenização, em arquivos como:
+- asl_pipeline/data/raw/corpus_0001.clean.asl.txt
+- asl_pipeline/data/raw/subset_100k.filtered.asl.enonly.clean.txt
+
+Resultado:
+- Padrões WHEREBE… e BEHUNGRY já aparecem na fonte raw.
+  Isso sugere que a colagem não é causada pelo modelo nem (necessariamente) por uma regra nova de preprocessing; ela já faz parte do gloss do corpus.
+
+
+4) Implicação linguística (ASL)
+Importante: token “colado” no gloss NÃO implica automaticamente “um único sinal” em ASL.
+O mais provável aqui é que se trate de um artefato de escrita do gloss/corpus (espaçamento inconsistente e palavras concatenadas), ou seja:
+- Uma escolha/ruído de anotação textual, não uma segmentação confiável de sinais.
+
+Portanto, interpretar WHEREBEBUS como “há um sinal único em ASL para ‘WHERE-BE-BUS’” seria arriscado sem validação linguística externa (dicionário/consulta a especialista/annotation guidelines do corpus).
+
+
+5) Conclusão
+- A presença de BE* e WHEREBE* colados é majoritariamente herdada do corpus.
+- O modelo aparenta reproduzir o padrão e, em casos, generalizar criando combinações novas (ex.: WHEREBEBUS) que não existem literalmente no dataset.
+- Isso aponta mais para um problema de padronização/normalização do texto-alvo (gloss) do que um “erro de aprendizado” puro.
+
+
+6) Próximos passos recomendados (para reduzir artefatos)
+Opção A — Normalização do corpus alvo (pré-treino):
+- Aplicar uma regra controlada para separar padrões como WHEREBE… e BE… quando apropriado (ex.: WHEREBE X → WHERE BE X; BEHUNGRY → BE HUNGRY), preservando exceções se necessário.
+- Re-treinar/ajustar o SentencePiece no corpus normalizado.
+
+Opção B — Pós-processamento (após decodificação) para legibilidade/avaliação:
+- Separar automaticamente certos padrões colados no output (ex.: BEHUNGRY → BE HUNGRY), somente para apresentação/relatório.
+- Atenção: isso pode mudar métricas se usado antes do BLEU; usar com critério.
+
+Opção C — Auditoria por frequência e lista de exceções:
+- Construir uma lista dos tokens colados mais frequentes (BENOT, BEVERY, WHEREBE..., etc.) e decidir política: manter como vocabulário “legado” ou normalizar.
+
+
+7) Reprodutibilidade (script)
+Foi criado um script para repetir a análise automaticamente:
+- analyze_be_agglutination.py
+Ele compara tokens colados encontrados em um arquivo de outputs com ocorrências no corpus.
+
+Fim do relatório.

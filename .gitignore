@@ -1,55 +1,23 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
+# Local model checkpoints
+checkpoints/
+*.pt
+*.ckpt
+*.safetensors
+
+# Generated datasets, outputs, logs and local envs
+data/
+data-bin/
+logs/
+results/
+.venv-lightconv/
+.venv/
+.venv-*/
+**/__pycache__/
+*.pyc
 *.pyd
 
-# Virtual environments
-.venv*/
-venv/
-ENV/
-.python-version
+# Temporary work folders from model prep
+surgiu durante o processo/
 
-# Packaging
-build/
-dist/
-*.egg-info/
-
-# Test/linters
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.coverage
-htmlcov/
-
-# IDE/OS
-.vscode/
-.idea/
-Thumbs.db
-Desktop.ini
-
-# Project artifacts (generated)
-/artifacts/
-/cache/
-/tmp/
-/logs/
-/results/
-
-# Fairseq/translation artifacts (generated, often large)
-/data/
-/data-bin/
-
-# Raw/filtered corpora (keep only small samples if any)
-asl_pipeline/data/raw/*.txt
-
-# Older archived runs
-/surgiu durante o processo/
-
-# MLflow
-/mlruns/
-
-# Local run logs
-/execution_log.csv
-
-# If you generate corpora here, keep it out of git
-translation_pipeline/data/corpus/
+# Large raw corpora
+asl_pipeline/data/raw/corpus_*.txt

@@ -104,6 +104,47 @@ While the pipeline is executing, relevant files will be written to `artifacts/tm
 
 Said artifact hash will be printed to the screen after the pipeline finishes, logged to the relevant log file in `logs` and saved to the `execution_log.csv` file.
 
+## Model Checkpoints
+
+### Where the trained model lives
+The main LightConv model was trained outside the repository to keep the workspace light:
+
+- `D:\translation-pipeline-checkpoints\lightconv_asl_100k_canon_enonly_clean_invSqrt\checkpoint_last.pt`
+
+There is also an earlier snapshot used in some experiments:
+
+- `D:\translation-pipeline-checkpoints\lightconv_asl_100k_canon_enonly_clean_invSqrt\checkpoint_19_86000.pt`
+
+### How to run inference
+Use the compatibility wrapper plus the saved checkpoint:
+
+```powershell
+& .\.venv-lightconv\Scripts\python.exe .\fairseq_compat_run.py interactive `
+  data-bin\asl_100k_canon_enonly_clean `
+  --path D:\translation-pipeline-checkpoints\lightconv_asl_100k_canon_enonly_clean_invSqrt\checkpoint_last.pt `
+  --source-lang en --target-lang asl `
+  --beam 5 `
+  --bpe sentencepiece `
+  --sentencepiece-model data\asl_100k_canon_enonly_clean\sp_en.model `
+  --post-process sentencepiece
+```
+
+### How to resume training
+The Windows training script already resumes automatically if `checkpoint_last.pt` exists:
+
+```powershell
+.\train_lightconv_asl_100k_canon_windows.ps1
+```
+
+If you want to change the output folder, pass `-SaveDir` when invoking the script. The default is the `D:` path above.
+
+### Best way to keep access to the model later
+Do not commit the `.pt` files to normal git. Better options are:
+
+1. Keep the code in git and store checkpoints in a fixed folder like `D:\translation-pipeline-checkpoints\...`.
+2. Back up the checkpoint folder to cloud storage or an external disk.
+3. If you really want the weights inside version control, use Git LFS instead of normal git.
+
 ## Pipeline Elements
 ### The Basics
 Data travels in the pipeline through elements. An element can be a source of data (for example, `csvsrc`), a data processor (for example, `translate`) or a sink for data (for example, `filedest`). See the `src/elements` folder for implementation examples.
